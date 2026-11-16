@@ -21,11 +21,35 @@ class MenuCard extends StatefulWidget {
 class _MenuCardState extends State<MenuCard> {
   bool _isHovered = false;
 
+  Color _getCategoryThemeColor(String slug) {
+    switch (slug) {
+      case 'matcha':
+        return const Color(0xFF2E7D32);
+      case 'taro':
+      case 'velvet':
+        return const Color(0xFF6A1B9A);
+      case 'squash':
+        return const Color(0xFFEF6C00);
+      case 'sanger':
+      case 'espresso':
+      case 'americano':
+        return const Color(0xFF4E342E);
+      case 'susu':
+      case 'latte':
+        return const Color(0xFF8D6E63);
+      case 'saku':
+        return const Color(0xFFD48B38);
+      default:
+        return AppColors.caramel;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
     final hasHot = item.priceHot != null;
     final hasIce = item.priceIce != null;
+    final themeColor = _getCategoryThemeColor(item.categorySlug);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -51,7 +75,7 @@ class _MenuCardState extends State<MenuCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Banner / Thumbnail Area with Marketplace Badges
+              // Top Banner / Thumbnail Area with Themed Ambient Stage
               Stack(
                 children: [
                   Container(
@@ -63,21 +87,42 @@ class _MenuCardState extends State<MenuCard> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
+                          themeColor.withValues(alpha: 0.12),
                           AppColors.creamLight,
-                          AppColors.cream.withValues(alpha: 0.5),
-                          AppColors.caramel.withValues(alpha: 0.08),
+                          Colors.white,
                         ],
                       ),
                     ),
-                    child: Center(
-                      child: AnimatedScale(
-                        duration: const Duration(milliseconds: 220),
-                        scale: _isHovered ? 1.15 : 1.0,
-                        child: Text(
-                          item.iconEmoji,
-                          style: const TextStyle(fontSize: 48),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Soft Ambient Backlight Halo
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: _isHovered ? 85 : 70,
+                          height: _isHovered ? 85 : 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: themeColor.withValues(alpha: _isHovered ? 0.22 : 0.12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: themeColor.withValues(alpha: _isHovered ? 0.35 : 0.15),
+                                blurRadius: 18,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+
+                        // Animated Drink Visual
+                        AnimatedScale(
+                          duration: const Duration(milliseconds: 220),
+                          scale: _isHovered ? 1.15 : 1.0,
+                          child: Text(
+                            item.iconEmoji,
+                            style: const TextStyle(fontSize: 48),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 

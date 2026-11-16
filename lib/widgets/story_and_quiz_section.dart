@@ -189,9 +189,9 @@ class _StoryAndQuizSectionState extends State<StoryAndQuizSection>
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: cols,
-                        childAspectRatio: isWide ? 0.95 : (isMedium ? 1.35 : 2.1),
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                        childAspectRatio: isWide ? 0.76 : (isMedium ? 0.95 : 1.45),
+                        crossAxisSpacing: 18,
+                        mainAxisSpacing: 18,
                         children: [
                           _buildAnimatedStoryCard(
                             stepIndex: 0,
@@ -466,107 +466,114 @@ class _StoryAndQuizSectionState extends State<StoryAndQuizSection>
           onTap: () => setState(() => _activeStoryStep = stepIndex),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.white : AppColors.background,
-              borderRadius: BorderRadius.circular(20),
+              color: isSelected ? Colors.white : const Color(0xFFFBF8F2),
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: isSelected ? AppColors.caramel : AppColors.caramel.withValues(alpha: 0.15),
-                width: isSelected ? 2.0 : 1.0,
+                color: isSelected ? AppColors.caramel : AppColors.caramel.withValues(alpha: 0.18),
+                width: isSelected ? 2.2 : 1.0,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.caramel.withValues(alpha: 0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                        color: AppColors.caramel.withValues(alpha: 0.24),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
                       ),
                     ]
-                  : null,
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Top Header Row: Animated Icon + Step Num + Badge
+                // 1. Top Bar: Badge on Left + Step Number on Right
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Moving Visual CustomPaint Canvas
                     Container(
-                      width: 46,
-                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                       decoration: BoxDecoration(
                         color: themeColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: themeColor.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: themeColor.withValues(alpha: 0.35)),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: CustomPaint(
-                          painter: _getStepPainter(stepIndex, progress, themeColor),
+                      child: Text(
+                        badge,
+                        style: TextStyle(
+                          color: themeColor,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.4,
                         ),
                       ),
                     ),
-
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: themeColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: themeColor.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            badge,
-                            style: TextStyle(
-                              color: themeColor,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          stepNum,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: isSelected ? AppColors.caramel : Colors.black26,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      stepNum,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: isSelected ? AppColors.caramel : Colors.black26,
+                      ),
                     ),
                   ],
                 ),
 
+                const SizedBox(height: 10),
+
+                // 2. Dedicated Wide Animated Illustration Stage (Height: 96px)
+                Container(
+                  height: 96,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        themeColor.withValues(alpha: 0.15),
+                        themeColor.withValues(alpha: 0.05),
+                        Colors.white.withValues(alpha: 0.6),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: themeColor.withValues(alpha: 0.25),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CustomPaint(
+                      painter: _getStepPainter(stepIndex, progress, themeColor),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 12),
 
-                // Title & Description
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        color: isSelected ? AppColors.espresso : AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      desc,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: isSelected ? AppColors.espresso.withValues(alpha: 0.8) : AppColors.textMuted,
-                        height: 1.45,
-                      ),
-                    ),
-                  ],
+                // 3. Title & Description
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: isSelected ? AppColors.espresso : AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  desc,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isSelected ? AppColors.espresso.withValues(alpha: 0.85) : AppColors.textMuted,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -616,7 +623,7 @@ class _StoryAndQuizSectionState extends State<StoryAndQuizSection>
   }
 }
 
-/// ── ANIMATED STEP 01 PAINTER: Sprouting Gayo Coffee Seed & Foliage ───────
+/// ── ANIMATED STEP 01 PAINTER: Lush Gayo Coffee Branch & Cherries ─────────
 class _SproutParticlePainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -625,58 +632,101 @@ class _SproutParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.62);
-    final sway = math.sin(progress * 2 * math.pi) * 3;
+    final w = size.width;
+    final h = size.height;
+    final sway = math.sin(progress * 2 * math.pi) * 4;
 
-    // Coffee Bean Base
-    final beanPaint = Paint()
-      ..color = const Color(0xFF5D4037)
-      ..style = PaintingStyle.fill;
-    canvas.drawOval(
-      Rect.fromCenter(center: center, width: 22, height: 16),
-      beanPaint,
-    );
+    // 1. Soft plantation mountain backdrop hills
+    final hillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          color.withValues(alpha: 0.18),
+          color.withValues(alpha: 0.05),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
 
-    // Bean Center Line
-    final centerLine = Paint()
-      ..color = const Color(0xFF3E2723)
-      ..strokeWidth = 1.6
+    final hillPath = Path()
+      ..moveTo(0, h)
+      ..lineTo(0, h * 0.65)
+      ..quadraticBezierTo(w * 0.25, h * 0.45, w * 0.55, h * 0.6)
+      ..quadraticBezierTo(w * 0.8, h * 0.72, w, h * 0.5)
+      ..lineTo(w, h)
+      ..close();
+    canvas.drawPath(hillPath, hillPaint);
+
+    // 2. Coffee Tree Branch Stem
+    final branchPaint = Paint()
+      ..color = const Color(0xFF4E342E)
+      ..strokeWidth = 3.8
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(
-      Offset(center.dx, center.dy - 6),
-      Offset(center.dx, center.dy + 6),
-      centerLine,
-    );
 
-    // Sprouting Leaf with Sway
+    final branchPath = Path()
+      ..moveTo(w * 0.1, h * 0.8)
+      ..quadraticBezierTo(w * 0.4, h * 0.55, w * 0.85, h * 0.45 + (sway * 0.4));
+    canvas.drawPath(branchPath, branchPaint);
+
+    // 3. Ripe Red Gayo Coffee Cherries (Spherical 3D shading)
+    final cherryCenters = [
+      Offset(w * 0.42, h * 0.58),
+      Offset(w * 0.55, h * 0.50),
+      Offset(w * 0.66, h * 0.48),
+    ];
+
+    for (int i = 0; i < cherryCenters.length; i++) {
+      final c = cherryCenters[i];
+      final r = 9.0 + (i % 2) * 1.5;
+
+      final cherryPaint = Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.35),
+          colors: const [
+            Color(0xFFFF5252), // Bright cherry shine
+            Color(0xFFD32F2F),
+            Color(0xFF8B0000), // Dark shadow
+          ],
+        ).createShader(Rect.fromCircle(center: c, radius: r));
+
+      canvas.drawCircle(c, r, cherryPaint);
+
+      // Specular highlight dot
+      final highlightPaint = Paint()..color = Colors.white.withValues(alpha: 0.8);
+      canvas.drawCircle(Offset(c.dx - r * 0.35, c.dy - r * 0.35), 2.0, highlightPaint);
+    }
+
+    // 4. Lush Green Coffee Leaves with Sway
     final leafPaint = Paint()
-      ..color = color
+      ..shader = LinearGradient(
+        colors: [const Color(0xFF4CAF50), const Color(0xFF2E7D32)],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
       ..style = PaintingStyle.fill;
 
-    final leafPath = Path();
-    leafPath.moveTo(center.dx, center.dy - 6);
-    leafPath.quadraticBezierTo(
-      center.dx + 8 + sway,
-      center.dy - 18,
-      center.dx + sway,
-      center.dy - 22,
-    );
-    leafPath.quadraticBezierTo(
-      center.dx - 8 + sway,
-      center.dy - 18,
-      center.dx,
-      center.dy - 6,
-    );
-    canvas.drawPath(leafPath, leafPaint);
+    // Left leaf
+    final leaf1 = Path()
+      ..moveTo(w * 0.35, h * 0.65)
+      ..quadraticBezierTo(w * 0.25 + sway, h * 0.4, w * 0.15 + sway, h * 0.45)
+      ..quadraticBezierTo(w * 0.25, h * 0.7, w * 0.35, h * 0.65);
+    canvas.drawPath(leaf1, leafPaint);
 
-    // Floating green foliage sparkles
+    // Right leaf
+    final leaf2 = Path()
+      ..moveTo(w * 0.7, h * 0.48)
+      ..quadraticBezierTo(w * 0.8 + sway, h * 0.25, w * 0.92 + sway, h * 0.3)
+      ..quadraticBezierTo(w * 0.82, h * 0.55, w * 0.7, h * 0.48);
+    canvas.drawPath(leaf2, leafPaint);
+
+    // 5. Floating Sunlight Aroma Sparkles
     final sparklePaint = Paint()..style = PaintingStyle.fill;
-    for (int i = 0; i < 3; i++) {
-      final t = (progress + (i * 0.33)) % 1.0;
-      final y = size.height * 0.5 - (t * 16);
-      final x = center.dx - 12 + (i * 12) + math.sin(t * math.pi * 2) * 4;
-      sparklePaint.color = color.withValues(alpha: (1.0 - t).clamp(0.0, 0.8));
-      canvas.drawCircle(Offset(x, y), 1.6, sparklePaint);
+    for (int i = 0; i < 5; i++) {
+      final t = (progress + (i * 0.2)) % 1.0;
+      final y = h * 0.85 - (t * h * 0.7);
+      final x = w * 0.2 + (i * (w * 0.15)) + math.sin(t * math.pi * 3) * 6;
+      final alpha = math.sin(t * math.pi).clamp(0.0, 1.0);
+
+      sparklePaint.color = const Color(0xFFFFD54F).withValues(alpha: alpha * 0.85);
+      canvas.drawCircle(Offset(x, y), 2.2, sparklePaint);
     }
   }
 
@@ -684,7 +734,7 @@ class _SproutParticlePainter extends CustomPainter {
   bool shouldRepaint(covariant _SproutParticlePainter oldDelegate) => true;
 }
 
-/// ── ANIMATED STEP 02 PAINTER: Roasting Flames & Rising Embers ────────────
+/// ── ANIMATED STEP 02 PAINTER: Roasting Oven, Dancing Flames & Hot Beans ───
 class _FlameParticlePainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -693,48 +743,128 @@ class _FlameParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.65);
-    final flicker = math.sin(progress * 4 * math.pi) * 3;
+    final w = size.width;
+    final h = size.height;
+    final center = Offset(w * 0.5, h * 0.68);
+    final flicker = math.sin(progress * 6 * math.pi) * 5;
 
-    // Outer Orange Flame
-    final flamePaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Color(0xFFFFB300), Color(0xFFE65100), Colors.transparent],
-      ).createShader(Rect.fromCircle(center: center, radius: 20));
+    // 1. Roaster Oven Drum Ambient Halo
+    final ovenPaint = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0, 0.2),
+        colors: [
+          const Color(0xFFFF6F00).withValues(alpha: 0.35),
+          const Color(0xFF3E1700).withValues(alpha: 0.15),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: 48));
+    canvas.drawCircle(center, 46, ovenPaint);
 
-    final flamePath = Path();
-    flamePath.moveTo(center.dx - 12, center.dy + 6);
-    flamePath.cubicTo(
-      center.dx - 16,
-      center.dy - 8,
-      center.dx - 4 + flicker,
-      center.dy - 20,
-      center.dx + flicker,
-      center.dy - 24,
+    // 2. Roaster Drum Grill Frame
+    final drumBorder = Paint()
+      ..color = const Color(0xFF4E342E).withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    canvas.drawArc(
+      Rect.fromCenter(center: center, width: 70, height: 46),
+      math.pi,
+      math.pi,
+      false,
+      drumBorder,
     );
-    flamePath.cubicTo(
-      center.dx + 6 - flicker,
-      center.dy - 18,
-      center.dx + 16,
-      center.dy - 8,
-      center.dx + 12,
-      center.dy + 6,
-    );
-    flamePath.close();
-    canvas.drawPath(flamePath, flamePaint);
 
-    // Inner Yellow Core
-    final corePaint = Paint()..color = const Color(0xFFFFF176);
-    canvas.drawCircle(Offset(center.dx, center.dy), 6 + (flicker * 0.5).abs(), corePaint);
+    // 3. Roaring Animated 3-Tier Flames
+    // Outer Crimson Flame
+    final flameOuter = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [Color(0xFFD84315), Color(0xFFFF5722)],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
 
-    // Rising Ember Sparks
+    final pathOuter = Path()
+      ..moveTo(center.dx - 28, center.dy + 8)
+      ..cubicTo(
+        center.dx - 32,
+        center.dy - 18,
+        center.dx - 12 + flicker,
+        center.dy - 38,
+        center.dx + flicker,
+        center.dy - 46,
+      )
+      ..cubicTo(
+        center.dx + 12 - flicker,
+        center.dy - 38,
+        center.dx + 32,
+        center.dy - 18,
+        center.dx + 28,
+        center.dy + 8,
+      )
+      ..close();
+    canvas.drawPath(pathOuter, flameOuter);
+
+    // Mid Amber Flame
+    final flameMid = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [Color(0xFFFFB300), Color(0xFFFFCA28)],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+
+    final pathMid = Path()
+      ..moveTo(center.dx - 18, center.dy + 8)
+      ..cubicTo(
+        center.dx - 20,
+        center.dy - 12,
+        center.dx - 6 + flicker * 0.8,
+        center.dy - 28,
+        center.dx + flicker * 0.6,
+        center.dy - 34,
+      )
+      ..cubicTo(
+        center.dx + 6 - flicker * 0.8,
+        center.dy - 28,
+        center.dx + 20,
+        center.dy - 12,
+        center.dx + 18,
+        center.dy + 8,
+      )
+      ..close();
+    canvas.drawPath(pathMid, flameMid);
+
+    // Inner White-Yellow Heat Core
+    final flameCore = Paint()..color = const Color(0xFFFFFDE7);
+    canvas.drawCircle(Offset(center.dx, center.dy - 4), 9 + (flicker * 0.4).abs(), flameCore);
+
+    // 4. Tumbling Roasted Coffee Beans
+    final beanPaint = Paint()
+      ..color = const Color(0xFF3E1F07)
+      ..style = PaintingStyle.fill;
+    final cleftPaint = Paint()
+      ..color = const Color(0xFFD4AF37)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    final beanCoords = [
+      Offset(center.dx - 34, center.dy - 6 + math.sin(progress * 2 * math.pi) * 3),
+      Offset(center.dx + 34, center.dy - 4 - math.sin(progress * 2 * math.pi) * 3),
+    ];
+
+    for (final bc in beanCoords) {
+      canvas.drawOval(Rect.fromCenter(center: bc, width: 14, height: 10), beanPaint);
+      canvas.drawLine(Offset(bc.dx, bc.dy - 4), Offset(bc.dx, bc.dy + 4), cleftPaint);
+    }
+
+    // 5. Rising Golden Sparks & Embers
     final emberPaint = Paint()..style = PaintingStyle.fill;
-    for (int i = 0; i < 4; i++) {
-      final t = (progress + (i * 0.25)) % 1.0;
-      final y = center.dy - 10 - (t * 20);
-      final x = center.dx - 8 + (i * 6) + math.sin(t * math.pi * 3) * 3;
-      emberPaint.color = const Color(0xFFFFD54F).withValues(alpha: (1.0 - t).clamp(0.0, 0.9));
-      canvas.drawCircle(Offset(x, y), 1.5, emberPaint);
+    for (int i = 0; i < 6; i++) {
+      final t = (progress + (i * 0.16)) % 1.0;
+      final y = center.dy - 12 - (t * (h * 0.6));
+      final x = center.dx - 22 + (i * 8.5) + math.sin(t * math.pi * 3) * 6;
+      final alpha = (1.0 - t).clamp(0.0, 1.0);
+
+      emberPaint.color = const Color(0xFFFFD54F).withValues(alpha: alpha * 0.9);
+      canvas.drawCircle(Offset(x, y), 2.0, emberPaint);
     }
   }
 
@@ -742,7 +872,7 @@ class _FlameParticlePainter extends CustomPainter {
   bool shouldRepaint(covariant _FlameParticlePainter oldDelegate) => true;
 }
 
-/// ── ANIMATED STEP 03 PAINTER: Sanger Milk Pull & Liquid Wave Stream ──────
+/// ── ANIMATED STEP 03 PAINTER: Dramatic Barista Pitcher & Sanger Pour ──────
 class _PouringStreamPainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -751,55 +881,114 @@ class _PouringStreamPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final wave = math.sin(progress * 2 * math.pi) * 2.5;
+    final w = size.width;
+    final h = size.height;
+    final streamSway = math.sin(progress * 2 * math.pi) * 4;
 
-    // Pouring Stream from above
+    // 1. Top Barista Stainless Pitcher (Pouring spout at top right)
+    final pitcherPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFB0BEC5), Color(0xFFECEFF1), Color(0xFF78909C)],
+      ).createShader(Rect.fromLTWH(w * 0.5, 6, 44, 28));
+
+    final pitcherPath = Path()
+      ..moveTo(w * 0.58, 8)
+      ..lineTo(w * 0.72, 8)
+      ..lineTo(w * 0.68, 28)
+      ..lineTo(w * 0.52, 28)
+      ..lineTo(w * 0.46, 16) // Spout
+      ..close();
+    canvas.drawPath(pitcherPath, pitcherPaint);
+
+    // 2. Continuous Flowing Liquid Stream (Espresso + Creamy Milk)
     final streamPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFFFF8E7), Color(0xFF6D4C41)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..strokeWidth = 4.2
+        colors: [
+          Color(0xFFFFF8E7), // Sweet cream top
+          Color(0xFF8D6E63),
+          Color(0xFF4E342E), // Rich espresso
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..strokeWidth = 5.5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    final streamPath = Path();
-    streamPath.moveTo(size.width * 0.5, 4);
-    streamPath.quadraticBezierTo(
-      size.width * 0.5 + wave,
-      size.height * 0.45,
-      size.width * 0.5 - (wave * 0.5),
-      size.height * 0.75,
-    );
+    final streamPath = Path()
+      ..moveTo(w * 0.46, 18)
+      ..quadraticBezierTo(
+        w * 0.44 + streamSway,
+        h * 0.45,
+        w * 0.42 - (streamSway * 0.4),
+        h * 0.72,
+      );
     canvas.drawPath(streamPath, streamPaint);
 
-    // Cup Base / Crema Froth at the bottom
-    final cremaPaint = Paint()
-      ..color = const Color(0xFFD7CCC8)
+    // Inner highlight stream
+    final innerStream = Paint()
+      ..color = Colors.white.withValues(alpha: 0.6)
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(streamPath, innerStream);
+
+    // 3. Bottom Glass Cup with 3 Sanger Layers
+    final cupCenter = Offset(w * 0.42, h * 0.78);
+    final cupW = 38.0;
+    final cupH = 26.0;
+
+    // Glass Cup body
+    final cupPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.35)
       ..style = PaintingStyle.fill;
+    final cupBorder = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+
+    final cupRect = Rect.fromCenter(center: cupCenter, width: cupW, height: cupH);
+    canvas.drawRRect(RRect.fromRectAndRadius(cupRect, const Radius.circular(6)), cupPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(cupRect, const Radius.circular(6)), cupBorder);
+
+    // Sanger Layers inside cup:
+    // Base condensed milk
+    final milkPaint = Paint()..color = const Color(0xFFFFF9E6);
+    canvas.drawRect(
+      Rect.fromLTWH(cupRect.left + 2, cupRect.bottom - 8, cupW - 4, 6),
+      milkPaint,
+    );
+    // Espresso layer
+    final espPaint = Paint()..color = const Color(0xFF3E2723);
+    canvas.drawRect(
+      Rect.fromLTWH(cupRect.left + 2, cupRect.top + 5, cupW - 4, cupH - 13),
+      espPaint,
+    );
+    // Golden Crema foam top
+    final cremaPaint = Paint()..color = const Color(0xFFD7CCC8);
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.5, size.height * 0.8),
-        width: 28 + wave.abs() * 2,
-        height: 10,
-      ),
+      Rect.fromCenter(center: Offset(cupCenter.dx, cupRect.top + 4), width: cupW - 4, height: 6),
       cremaPaint,
     );
 
-    // Droplets
+    // 4. Splashing Droplets & Crema Froth Bubbles
     final dropPaint = Paint()
       ..color = const Color(0xFFFFF8E7)
       ..style = PaintingStyle.fill;
-    final dropY = (size.height * 0.15 + (progress * 24)) % (size.height * 0.7);
-    canvas.drawCircle(Offset(size.width * 0.5 + wave * 0.8, dropY), 1.8, dropPaint);
+
+    for (int i = 0; i < 3; i++) {
+      final t = (progress + (i * 0.33)) % 1.0;
+      final dx = cupCenter.dx - 14 + (i * 14) + math.sin(t * math.pi) * 6;
+      final dy = cupRect.top - (math.sin(t * math.pi) * 12);
+      canvas.drawCircle(Offset(dx, dy), 1.8, dropPaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _PouringStreamPainter oldDelegate) => true;
 }
 
-/// ── ANIMATED STEP 04 PAINTER: Sealed Fast Delivery Cup with Speed Lines ──
+/// ── ANIMATED STEP 04 PAINTER: Sealed Takeaway Cup, Steam & Delivery Speed ──
 class _DeliverySpeedPainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -808,43 +997,83 @@ class _DeliverySpeedPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.55, size.height * 0.55);
+    final w = size.width;
+    final h = size.height;
+    final center = Offset(w * 0.55, h * 0.58);
 
-    // Takeaway Sealed Cup Body
+    // 1. Dynamic Gliding Delivery Speed Streaks (Left to Right)
+    final streakPaint = Paint()
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final streakYOffsets = [h * 0.25, h * 0.45, h * 0.7, h * 0.85];
+    final streakLengths = [28.0, 44.0, 36.0, 20.0];
+
+    for (int i = 0; i < streakYOffsets.length; i++) {
+      final t = (progress + (i * 0.25)) % 1.0;
+      final startX = (t * (w * 0.85)) - 10;
+      final y = streakYOffsets[i];
+      final alpha = math.sin(t * math.pi).clamp(0.0, 1.0);
+
+      streakPaint
+        ..color = color.withValues(alpha: alpha * 0.75)
+        ..strokeWidth = 2.0 + (i % 2);
+
+      canvas.drawLine(
+        Offset(startX, y),
+        Offset(startX + streakLengths[i], y),
+        streakPaint,
+      );
+    }
+
+    // 2. Modern Seuma Takeaway Cup with Lid & Sleeve
+    final cupW = 34.0;
+    final cupH = 46.0;
+
+    // Cup Body
     final cupPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF261205), Color(0xFF1B0B04)],
+      ).createShader(Rect.fromCenter(center: center, width: cupW, height: cupH));
 
-    final cupPath = Path();
-    cupPath.moveTo(center.dx - 10, center.dy - 12);
-    cupPath.lineTo(center.dx + 10, center.dy - 12);
-    cupPath.lineTo(center.dx + 8, center.dy + 14);
-    cupPath.lineTo(center.dx - 8, center.dy + 14);
-    cupPath.close();
+    final cupPath = Path()
+      ..moveTo(center.dx - cupW * 0.5, center.dy - cupH * 0.5)
+      ..lineTo(center.dx + cupW * 0.5, center.dy - cupH * 0.5)
+      ..lineTo(center.dx + cupW * 0.38, center.dy + cupH * 0.5)
+      ..lineTo(center.dx - cupW * 0.38, center.dy + cupH * 0.5)
+      ..close();
     canvas.drawPath(cupPath, cupPaint);
 
-    // Cup Lid
-    final lidPaint = Paint()..color = const Color(0xFF1E88E5);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(center.dx, center.dy - 14), width: 24, height: 5),
-        const Radius.circular(2),
-      ),
-      lidPaint,
-    );
+    // Thermal Kraft Sleeve
+    final sleevePaint = Paint()
+      ..color = const Color(0xFFD48B38)
+      ..style = PaintingStyle.fill;
+    final sleeveRect = Rect.fromCenter(center: Offset(center.dx, center.dy + 2), width: cupW * 0.95, height: 18);
+    canvas.drawRRect(RRect.fromRectAndRadius(sleeveRect, const Radius.circular(3)), sleevePaint);
 
-    // Animated Delivery Speed Lines (left to right)
-    final linePaint = Paint()
-      ..color = color.withValues(alpha: 0.6)
+    // Cup Lid (Blue / White Hygienic Cap)
+    final lidPaint = Paint()..color = const Color(0xFF1565C0);
+    final lidRect = Rect.fromCenter(center: Offset(center.dx, center.dy - cupH * 0.5 - 3), width: cupW + 6, height: 8);
+    canvas.drawRRect(RRect.fromRectAndRadius(lidRect, const Radius.circular(4)), lidPaint);
+
+    // Tamper-evident Seal Sticker
+    final sealPaint = Paint()..color = const Color(0xFFFFD54F);
+    canvas.drawRect(Rect.fromLTWH(center.dx - 3, center.dy - cupH * 0.5 - 5, 6, 12), sealPaint);
+
+    // 3. Warm Rising Steam Waves
+    final steamPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.55)
       ..strokeWidth = 1.8
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    for (int i = 0; i < 3; i++) {
-      final t = (progress + (i * 0.33)) % 1.0;
-      final x = 4 + (t * 14);
-      final y = center.dy - 8 + (i * 9);
-      canvas.drawLine(Offset(x, y), Offset(x + 10, y), linePaint);
+    for (int i = 0; i < 2; i++) {
+      final t = (progress + (i * 0.5)) % 1.0;
+      final steamY = center.dy - cupH * 0.5 - 10 - (t * 18);
+      final steamX = center.dx - 4 + (i * 8) + math.sin(t * math.pi * 2) * 3;
+      canvas.drawCircle(Offset(steamX, steamY), 1.4, steamPaint);
     }
   }
 
