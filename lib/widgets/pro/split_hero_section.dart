@@ -1,7 +1,7 @@
 // lib/widgets/pro/split_hero_section.dart
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import 'sanger_cup_widget.dart';
+import 'multi_drink_cup_widget.dart';
 
 class SplitHeroSection extends StatefulWidget {
   final VoidCallback onOrderNow;
@@ -20,6 +20,21 @@ class SplitHeroSection extends StatefulWidget {
 class _SplitHeroSectionState extends State<SplitHeroSection> with SingleTickerProviderStateMixin {
   late AnimationController _floatController;
   bool _isIced = false;
+  int _drinkIndex = 0;
+
+  DrinkItemData get _currentDrink => kFeaturedDrinks[_drinkIndex];
+
+  void _nextDrink() {
+    setState(() {
+      _drinkIndex = (_drinkIndex + 1) % kFeaturedDrinks.length;
+    });
+  }
+
+  void _prevDrink() {
+    setState(() {
+      _drinkIndex = (_drinkIndex - 1 + kFeaturedDrinks.length) % kFeaturedDrinks.length;
+    });
+  }
 
   @override
   void initState() {
@@ -277,16 +292,17 @@ class _SplitHeroSectionState extends State<SplitHeroSection> with SingleTickerPr
     );
   }
 
-  // RIGHT: 3D Stage with Artisanal Cup Sanger CustomPainter & Floating Badges
+  // RIGHT: 3D Stage with Artisanal Multi-Drink Showcase & Interactive Next/Prev Slider
   Widget _buildHero3DStage({required bool isDesktop}) {
-    final stageWidth = isDesktop ? 480.0 : 340.0;
-    final stageHeight = isDesktop ? 420.0 : 360.0;
-    final cupSize = isDesktop ? 270.0 : 210.0;
+    final stageWidth = isDesktop ? 500.0 : 340.0;
+    final stageHeight = isDesktop ? 450.0 : 390.0;
+    final cupScale = isDesktop ? 1.05 : 0.88;
+    final current = _currentDrink;
 
     return AnimatedBuilder(
       animation: _floatController,
       builder: (context, child) {
-        final floatOffset = _floatController.value * 12.0;
+        final floatOffset = _floatController.value * 10.0;
 
         return SizedBox(
           width: stageWidth,
@@ -295,20 +311,109 @@ class _SplitHeroSectionState extends State<SplitHeroSection> with SingleTickerPr
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // Center Artisanal Sanger Cup CustomPainter Widget
+              // 1. Center Artisanal Animated Cup with Smooth Transition
               Positioned(
-                bottom: 20,
-                child: SangerCupWidget(
-                  size: cupSize,
-                  isIced: _isIced,
-                  onToggleThermal: (val) => setState(() => _isIced = val),
+                bottom: 50,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  transitionBuilder: (child, anim) {
+                    return FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.12, 0),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: MultiDrinkCupWidget(
+                    key: ValueKey('${current.id}-$_isIced'),
+                    drink: current,
+                    isIced: _isIced,
+                    scale: cupScale,
+                  ),
                 ),
               ),
 
-              // Floating Product Badge 1: Top Right - Rating & Terlaris
+              // 2. Next & Prev Floating Navigation Controls (Glassmorphism & Gold Glow)
+              // PREV BUTTON (LEFT)
               Positioned(
-                top: 24 - floatOffset * 0.6,
-                right: isDesktop ? -10 : 8,
+                left: isDesktop ? 4 : -4,
+                top: stageHeight * 0.42,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _prevDrink,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF160A03).withValues(alpha: 0.85),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.55),
+                          width: 1.4,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.3),
+                            blurRadius: 14,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.chevron_left_rounded,
+                        color: Color(0xFFFFD54F),
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // NEXT BUTTON (RIGHT)
+              Positioned(
+                right: isDesktop ? 4 : -4,
+                top: stageHeight * 0.42,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _nextDrink,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF160A03).withValues(alpha: 0.85),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.55),
+                          width: 1.4,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.3),
+                            blurRadius: 14,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Color(0xFFFFD54F),
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // 3. Floating Product Badge 1: Top Right - Rating & Terlaris
+              Positioned(
+                top: 20 - floatOffset * 0.5,
+                right: isDesktop ? -12 : 4,
                 child: _buildFloatingBadge(
                   icon: Icons.star_rounded,
                   iconColor: Colors.amber,
@@ -317,28 +422,28 @@ class _SplitHeroSectionState extends State<SplitHeroSection> with SingleTickerPr
                 ),
               ),
 
-              // Floating Product Badge 2: Bottom Left - Signature Price Pill
+              // 4. Floating Product Badge 2: Bottom Left - Signature Price Pill
               Positioned(
-                bottom: 50 + floatOffset * 0.5,
-                left: isDesktop ? -15 : 6,
+                bottom: 80 + floatOffset * 0.5,
+                left: isDesktop ? -18 : 4,
                 child: _buildFloatingPriceBadge(
-                  title: _isIced ? 'Iced Sanger Aceh' : 'Hot Sanger Espresso',
-                  price: _isIced ? 'Rp 12.000' : 'Rp 10.000',
-                  badge: 'BESTSELLER #1',
+                  title: current.name,
+                  price: current.price,
+                  badge: current.badgeText,
                   onOrder: widget.onOrderNow,
                 ),
               ),
 
-              // Floating Badge 3: Top Left - 3 Layer Highlight
+              // 5. Floating Badge 3: Top Left - Subtitle / Recipe Highlight
               Positioned(
-                top: 50 + floatOffset * 0.4,
-                left: isDesktop ? -12 : 8,
+                top: 45 + floatOffset * 0.4,
+                left: isDesktop ? -14 : 6,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.72),
+                    color: Colors.black.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.4), width: 1),
+                    border: Border.all(color: current.secondaryColor.withValues(alpha: 0.5), width: 1.2),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.3),
@@ -352,15 +457,15 @@ class _SplitHeroSectionState extends State<SplitHeroSection> with SingleTickerPr
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.greenAccent,
+                          color: current.secondaryColor,
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Text(
-                        '3 Layer Otentik Aceh',
-                        style: TextStyle(
+                      Text(
+                        current.subtitle,
+                        style: const TextStyle(
                           color: AppColors.cream,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
@@ -368,6 +473,108 @@ class _SplitHeroSectionState extends State<SplitHeroSection> with SingleTickerPr
                       ),
                     ],
                   ),
+                ),
+              ),
+
+              // 6. Bottom Drink Indicator Pills & Hot/Ice Toggle
+              Positioned(
+                bottom: 6,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Thermal toggle if applicable
+                    if (current.hasIcedOption)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF180A04).withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.gold.withValues(alpha: 0.35)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              onTap: () => setState(() => _isIced = false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: !_isIced ? AppColors.caramel : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text('🔥', style: TextStyle(fontSize: !_isIced ? 12 : 10)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'HOT',
+                                      style: TextStyle(
+                                        color: !_isIced ? Colors.white : AppColors.cream.withValues(alpha: 0.6),
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => setState(() => _isIced = true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: _isIced ? const Color(0xFF0288D1) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text('❄️', style: TextStyle(fontSize: _isIced ? 12 : 10)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'ICED',
+                                      style: TextStyle(
+                                        color: _isIced ? Colors.white : AppColors.cream.withValues(alpha: 0.6),
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // 5 Drinks Dots Indicator
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(kFeaturedDrinks.length, (idx) {
+                        final isAct = idx == _drinkIndex;
+                        return GestureDetector(
+                          onTap: () => setState(() => _drinkIndex = idx),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: isAct ? 26 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: isAct ? const Color(0xFFFFD54F) : Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(4),
+                              boxShadow: isAct
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFFFFD54F).withValues(alpha: 0.6),
+                                        blurRadius: 6,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
                 ),
               ),
             ],
