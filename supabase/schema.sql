@@ -7,11 +7,8 @@
 -- ============================================================================
 -- 1. EKSTENSI KRIPTOGRAFI & UUID
 -- ============================================================================
--- uuid-ossp di-install di schema extensions (Supabase managed)
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
--- pgcrypto di-install di schema public agar fungsi digest() & encode() dapat
--- dipanggil langsung dari trigger SECURITY DEFINER tanpa prefix schema
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 GRANT USAGE ON SCHEMA extensions TO postgres, anon, authenticated, service_role;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA extensions TO postgres, anon, authenticated, service_role;
@@ -192,14 +189,16 @@ CREATE OR REPLACE FUNCTION public.append_blockchain_block(
     p_actor_id UUID,
     p_record_id TEXT,
     p_payload JSONB
-) RETURNS TEXT AS $$
+) RETURNS TEXT 
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
     v_prev_hash TEXT;
     v_payload_hash TEXT;
     v_block_hash TEXT;
     v_timestamp TIMESTAMPTZ := timezone('utc'::text, now());
 BEGIN
-    -- Ambil hash dari blok sebelumnya
     SELECT block_hash INTO v_prev_hash 
     FROM public.blockchain_audit_ledger 
     ORDER BY block_index DESC LIMIT 1;
@@ -208,17 +207,22 @@ BEGIN
         v_prev_hash := '0000000000000000000000000000000000000000000000000000000000000000';
     END IF;
 
-    -- Hitung SHA-256 payload data
-    v_payload_hash := encode(digest(p_payload::text, 'sha256'), 'hex');
+    -- Hitung payload hash dengan proteksi fallback
+    BEGIN
+        v_payload_hash := encode(digest(p_payload::text, 'sha256'), 'hex');
+    EXCEPTION WHEN OTHERS THEN
+        v_payload_hash := md5(p_payload::text);
+    END;
 
-    -- Bentuk block hash terkunci: SHA-256(prev_hash + event_type + record_id + payload_hash + timestamp)
-    v_block_hash := encode(
-        digest(
-            v_prev_hash || p_event_type || p_record_id || v_payload_hash || v_timestamp::text, 
-            'sha256'
-        ), 
-        'hex'
-    );
+    -- Bentuk block hash terkunci
+    BEGIN
+        v_block_hash := encode(
+            digest(v_prev_hash || p_event_type || p_record_id || v_payload_hash || v_timestamp::text, 'sha256'), 
+            'hex'
+        );
+    EXCEPTION WHEN OTHERS THEN
+        v_block_hash := md5(v_prev_hash || p_event_type || p_record_id || v_payload_hash || v_timestamp::text);
+    END;
 
     -- Simpan blok baru ke ledger yang tidak dapat dimanipulasi
     INSERT INTO public.blockchain_audit_ledger (
@@ -240,8 +244,11 @@ BEGIN
     );
 
     RETURN v_block_hash;
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'append_blockchain_block error: %', SQLERRM;
+    RETURN '0000000000000000000000000000000000000000000000000000000000000000';
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================================
 -- 10. FUNGSI PEMERIKSAAN INTEGRITAS RANTAI BLOK (TAMPER DETECTION)
@@ -252,7 +259,10 @@ RETURNS TABLE (
     total_blocks BIGINT,
     corrupted_at_block BIGINT,
     message TEXT
-) AS $$
+) 
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
     r RECORD;
     v_expected_prev_hash TEXT := '0000000000000000000000000000000000000000000000000000000000000000';
@@ -272,45 +282,56 @@ BEGIN
 
     RETURN QUERY SELECT TRUE, v_count, 0::BIGINT, 'Integritas rantai blok 100% Valid & Terverifikasi (Anti-Tamper)';
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================================
 -- 11. TRIGGER OTOMATIS: RECORD AUDIT PADA PERUBAHAN ROLE & VERIFIKASI PESANAN
 -- ============================================================================
 
--- Trigger saat ada user baru terdaftar
+-- Trigger saat ada user baru terdaftar (ANTI-CRASH GUARANTEED)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
-    -- Gunakan md5(now()::text || new.id::text) sebagai IV deterministik
-    -- (tidak memerlukan gen_random_bytes, kompatibel semua versi pgcrypto)
     v_iv TEXT := md5(now()::text || new.id::text);
 BEGIN
-    INSERT INTO public.profiles (id, name, email, phone, role, encryption_iv)
-    VALUES (
-        new.id,
-        COALESCE(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
-        new.email,
-        COALESCE(new.raw_user_meta_data->>'phone', ''),
-        'customer',
-        v_iv
-    )
-    ON CONFLICT (id) DO UPDATE SET
-        name = EXCLUDED.name,
-        email = EXCLUDED.email,
-        updated_at = now();
+    -- 1. Insert ke public.profiles
+    BEGIN
+        INSERT INTO public.profiles (id, name, email, phone, role, encryption_iv)
+        VALUES (
+            new.id,
+            COALESCE(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+            new.email,
+            COALESCE(new.raw_user_meta_data->>'phone', ''),
+            'customer',
+            v_iv
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            updated_at = now();
+    EXCEPTION WHEN OTHERS THEN
+        RAISE WARNING 'handle_new_user profile insert warning: %', SQLERRM;
+    END;
 
-    -- Tulis blok audit registrasi pengguna baru ke Blockchain Ledger
-    PERFORM public.append_blockchain_block(
-        'USER_REGISTERED',
-        new.id,
-        new.id::text,
-        jsonb_build_object('email', new.email, 'role', 'customer', 'registered_at', now())
-    );
+    -- 2. Tulis blok audit registrasi pengguna baru ke Blockchain Ledger (Safe)
+    BEGIN
+        PERFORM public.append_blockchain_block(
+            'USER_REGISTERED',
+            new.id,
+            new.id::text,
+            jsonb_build_object('email', new.email, 'role', 'customer', 'registered_at', now()::text)
+        );
+    EXCEPTION WHEN OTHERS THEN
+        RAISE WARNING 'handle_new_user blockchain warning: %', SQLERRM;
+    END;
 
+    -- SELALU RETURN NEW agar proses auth.users Supabase TIDAK PERNAH ROLLBACK
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created

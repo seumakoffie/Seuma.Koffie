@@ -253,6 +253,8 @@ class AuthManager extends ChangeNotifier {
       return 'Kata sandi minimal 6 karakter.';
     } else if (lower.contains('email not confirmed')) {
       return 'Email belum dikonfirmasi. Harap matikan "Confirm email" di Supabase Providers atau cek inbox email Anda.';
+    } else if (lower.contains('database error saving new user')) {
+      return 'Database Supabase sedang mengupdate schema. Pastikan script fix_trigger_now.sql telah dijalankan di Supabase SQL Editor.';
     } else if (lower.contains('rate limit')) {
       return 'Terlalu banyak permintaan. Silakan tunggu 1 menit.';
     }

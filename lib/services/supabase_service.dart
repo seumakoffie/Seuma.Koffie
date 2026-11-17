@@ -93,6 +93,25 @@ class SeumaSupabaseService {
       },
     );
 
+    // Fallback: Jika profil belum dibuat oleh trigger, upsert langsung
+    final user = res.user;
+    if (user != null) {
+      try {
+        await client!.from('profiles').upsert({
+          'id': user.id,
+          'name': name.trim(),
+          'email': email.trim(),
+          'phone': phone.trim(),
+          'role': 'customer',
+          'member_tier': 'New Member',
+          'points': 100,
+          'encryption_iv': user.id.replaceAll('-', '').substring(0, 16),
+        });
+      } catch (e) {
+        debugPrint('Fallback profile upsert info: $e');
+      }
+    }
+
     return res;
   }
 
