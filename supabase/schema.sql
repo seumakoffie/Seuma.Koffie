@@ -77,6 +77,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_encrypted TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS encryption_iv TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS member_tier TEXT NOT NULL DEFAULT 'New Member';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 100;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS account_integrity_hash TEXT;
@@ -539,6 +541,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_encrypted TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS encryption_iv TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS member_tier TEXT NOT NULL DEFAULT 'New Member';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 100;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
 
 INSERT INTO public.profiles (id, name, email, phone, role, encryption_iv, member_tier, points)
 SELECT 
