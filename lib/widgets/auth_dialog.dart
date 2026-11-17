@@ -118,6 +118,16 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
     final email = _emailOrPhoneCtrl.text.trim();
     final pass = _passwordCtrl.text.trim();
 
+    if (!_isRegister && auth.isLockedOut) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🛑 Akses login ditangguhkan sementara (Anti-Brute Force). Silakan tunggu ${auth.remainingLockoutSeconds} detik.'),
+          backgroundColor: Colors.red.shade800,
+        ),
+      );
+      return;
+    }
+
     if (_isRegister && !_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -157,7 +167,9 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
       );
     }
 
-    if (mounted && success) {
+    if (!mounted) return;
+
+    if (success) {
       Navigator.of(context).pop();
       widget.onAuthSuccess?.call();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -181,6 +193,49 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
           ),
         ),
       );
+    } else if (!_isRegister) {
+      if (auth.isLockedOut) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red.shade800,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Row(
+              children: [
+                const Icon(Icons.security, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '🛑 Akun ditangguhkan sementara (${auth.remainingLockoutSeconds} detik) karena ${auth.failedAttempts}x percobaan gagal. Dilindungi Cloudflare & Anti-Brute Force.',
+                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        final remaining = 3 - auth.failedAttempts;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.orange.shade900,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '⚠️ Password salah (min 4 karakter). Sisa percobaan sebelum lockout: ${remaining > 0 ? remaining : 1}x.',
+                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -203,22 +258,25 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final auth = AuthManager.instance;
 
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: AppColors.softShadow,
-          border: Border.all(color: AppColors.caramel.withValues(alpha: 0.15)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    return ListenableBuilder(
+      listenable: auth,
+      builder: (context, _) {
+        return ScaleTransition(
+          scale: _scaleAnimation,
+          child: Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: AppColors.softShadow,
+              border: Border.all(color: AppColors.caramel.withValues(alpha: 0.15)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
               // Header Row with mascot & close button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -502,11 +560,84 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                 ),
               ],
 
-              const SizedBox(height: 18),
+              // Anti-Brute Force Lockout & Warning Banner
+              if (!_isRegister && auth.isLockedOut) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.red.shade300, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.lock_clock, color: Colors.red.shade800, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'AKSES DIKUNCI (ANTI-BRUTE FORCE)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.red.shade900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Terlalu banyak percobaan gagal (${auth.failedAttempts}x). Harap tunggu ${auth.remainingLockoutSeconds} detik sebelum mencoba lagi.',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.red.shade800,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ] else if (!_isRegister && auth.failedAttempts > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.amber.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.shield_outlined, color: Colors.orange.shade800, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Percobaan gagal: ${auth.failedAttempts}/3 kali. Akun akan terkunci jika salah 3 kali berturut-turut.',
+                          style: TextStyle(fontSize: 11, color: Colors.orange.shade900, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
+
+              const SizedBox(height: 4),
 
               // Submit Button
               ElevatedButton(
-                onPressed: (auth.isLoading || (_isRegister && !_agreedToTerms))
+                onPressed: (auth.isLoading || (!_isRegister && auth.isLockedOut) || (_isRegister && !_agreedToTerms))
                     ? (_isRegister && !_agreedToTerms
                         ? () {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -519,9 +650,11 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                         : null)
                     : _handleSubmit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: (_isRegister && !_agreedToTerms) ? const Color(0xFFBCAAA4) : AppColors.caramel,
+                  backgroundColor: ((_isRegister && !_agreedToTerms) || (!_isRegister && auth.isLockedOut))
+                      ? const Color(0xFFBCAAA4)
+                      : AppColors.caramel,
                   foregroundColor: Colors.white,
-                  elevation: (_isRegister && !_agreedToTerms) ? 1 : 4,
+                  elevation: ((_isRegister && !_agreedToTerms) || (!_isRegister && auth.isLockedOut)) ? 1 : 4,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
@@ -532,7 +665,11 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : Text(
-                        _isRegister ? 'Daftar Akun & Lanjut Belanja' : 'Masuk Sekarang',
+                        _isRegister
+                            ? 'Daftar Akun & Lanjut Belanja'
+                            : (auth.isLockedOut
+                                ? 'Terkunci (${auth.remainingLockoutSeconds}s)'
+                                : 'Masuk Sekarang'),
                         style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800),
                       ),
               ),
@@ -541,7 +678,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
 
               // Social Login
               OutlinedButton.icon(
-                onPressed: auth.isLoading ? null : _handleGoogleLogin,
+                onPressed: (auth.isLoading || (!_isRegister && auth.isLockedOut)) ? null : _handleGoogleLogin,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   side: BorderSide(color: Colors.grey.withValues(alpha: 0.25)),
@@ -579,6 +716,8 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

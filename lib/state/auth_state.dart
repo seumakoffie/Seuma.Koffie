@@ -9,19 +9,62 @@ class AuthManager extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
 
+  // Anti-Brute Force Tracking & Rate Limiting Guard
+  int _failedAttempts = 0;
+  DateTime? _lockoutUntil;
+
   UserModel? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
   bool get isLoading => _isLoading;
+  int get failedAttempts => _failedAttempts;
+
+  bool get isLockedOut =>
+      _lockoutUntil != null && DateTime.now().isBefore(_lockoutUntil!);
+
+  int get remainingLockoutSeconds {
+    if (_lockoutUntil == null) return 0;
+    final diff = _lockoutUntil!.difference(DateTime.now()).inSeconds;
+    return diff > 0 ? diff : 0;
+  }
+
+  void recordFailedAttempt() {
+    _failedAttempts++;
+    if (_failedAttempts >= 5) {
+      _lockoutUntil = DateTime.now().add(const Duration(minutes: 5));
+    } else if (_failedAttempts >= 3) {
+      _lockoutUntil = DateTime.now().add(const Duration(seconds: 30));
+    }
+    notifyListeners();
+  }
+
+  void resetLockout() {
+    _failedAttempts = 0;
+    _lockoutUntil = null;
+    notifyListeners();
+  }
 
   Future<bool> login({
     required String identifier, // email or phone
     required String password,
   }) async {
+    if (isLockedOut) return false;
+
     _isLoading = true;
     notifyListeners();
 
     // Mock API delay for realistic UX
     await Future.delayed(const Duration(milliseconds: 600));
+
+    // Simulate password validation (min 4 chars)
+    if (password.length < 4) {
+      _isLoading = false;
+      recordFailedAttempt();
+      return false;
+    }
+
+    // Success login: reset brute force guard
+    _failedAttempts = 0;
+    _lockoutUntil = null;
 
     _currentUser = UserModel(
       id: 'usr-${DateTime.now().millisecondsSinceEpoch}',
