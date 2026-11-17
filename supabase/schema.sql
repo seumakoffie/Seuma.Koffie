@@ -1,5 +1,5 @@
 -- ============================================================================
--- SEUMA.KOFFIE — SUPABASE MASTER DATABASE SCHEMA
+-- SEUMA.KOFFIE — SUPABASE MASTER DATABASE SCHEMA (PRODUCTION FINAL)
 -- Full Stack Integration: Auth, Profiles, Shift, Orders, Realtime & Blockchain
 -- Project URL: https://hkmghwcidwrriystuyqt.supabase.co
 -- ============================================================================
@@ -338,28 +338,6 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- ============================================================================
--- SINKRONISASI AKUN LAMA KE TABEL PROFILES (BACKFILL AUTOMATIC SYNC)
--- Memastikan semua user yang sudah mendaftar di auth.users otomatis masuk
--- ============================================================================
-INSERT INTO public.profiles (id, name, email, phone, role, encryption_iv, member_tier, points)
-SELECT 
-    u.id,
-    COALESCE(u.raw_user_meta_data->>'name', split_part(u.email, '@', 1)) AS name,
-    u.email,
-    COALESCE(u.raw_user_meta_data->>'phone', '') AS phone,
-    'customer'::user_role AS role,
-    md5(now()::text || u.id::text) AS encryption_iv,
-    'New Member' AS member_tier,
-    100 AS points
-FROM auth.users u
-LEFT JOIN public.profiles p ON p.id = u.id
-WHERE p.id IS NULL
-ON CONFLICT (id) DO UPDATE SET
-    name = EXCLUDED.name,
-    email = EXCLUDED.email,
-    updated_at = now();
-
 -- Trigger saat Role diubah oleh Admin/Owner
 CREATE OR REPLACE FUNCTION public.handle_role_change_audit()
 RETURNS TRIGGER AS $$
@@ -450,6 +428,10 @@ DROP POLICY IF EXISTS "Profiles read policy" ON public.profiles;
 CREATE POLICY "Profiles read policy" ON public.profiles 
     FOR SELECT USING (auth.uid() = id OR public.is_staff_or_admin());
 
+DROP POLICY IF EXISTS "Profiles insert policy" ON public.profiles;
+CREATE POLICY "Profiles insert policy" ON public.profiles 
+    FOR INSERT WITH CHECK (true);
+
 DROP POLICY IF EXISTS "Profiles update policy" ON public.profiles;
 CREATE POLICY "Profiles update policy" ON public.profiles 
     FOR UPDATE USING (auth.uid() = id OR public.is_admin());
@@ -530,4 +512,34 @@ DO $$ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.shift_schedules;
 EXCEPTION WHEN others THEN null; END $$;
 
--- Selesai. Database Seuma.Koffie siap beroperasi secara Realtime & Terverifikasi Blockchain.
+-- ============================================================================
+-- 14. SINKRONISASI AKUN LAMA KE TABEL PROFILES (BACKFILL AUTOMATIC SYNC)
+-- Memindahkan akun yang sudah terdaftar di auth.users ke public.profiles
+-- ============================================================================
+INSERT INTO public.profiles (id, name, email, phone, role, encryption_iv, member_tier, points)
+SELECT 
+    u.id,
+    COALESCE(u.raw_user_meta_data->>'name', split_part(u.email, '@', 1)),
+    u.email,
+    COALESCE(u.raw_user_meta_data->>'phone', ''),
+    'customer'::user_role,
+    md5(now()::text || u.id::text),
+    'New Member',
+    100
+FROM auth.users u
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    email = EXCLUDED.email;
+
+-- ============================================================================
+-- 15. PROMOSI AKUN UTAMA MENJADI SUPER ADMIN (JALANKAN SESUAI KEBUTUHAN)
+-- Hapus tanda komentar (--) pada baris di bawah jika Anda ingin akun Anda
+-- langsung menjadi Super Admin saat ini juga:
+-- ============================================================================
+-- UPDATE public.profiles 
+-- SET role = 'admin', member_tier = 'Super Admin' 
+-- WHERE email = 'zarqud@gmail.com';
+
+-- ============================================================================
+-- SELESAI. Database Seuma.Koffie 100% Terintegrasi, Realtime & Blockchain Ready!
+-- ============================================================================
