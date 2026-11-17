@@ -225,6 +225,25 @@ class AuthManager extends ChangeNotifier {
     }
   }
 
+  /// Refresh profil dari Supabase (berguna setelah admin mengubah role user)
+  Future<void> refreshProfile() async {
+    final authUser = SeumaSupabaseService.instance.currentAuthUser;
+    if (authUser == null) return;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final profile = await SeumaSupabaseService.instance.getProfile(authUser.id);
+      if (profile != null) {
+        _currentUser = profile;
+        debugPrint('✅ Profil diperbarui: role=${profile.role.name}');
+      }
+    } catch (e) {
+      debugPrint('Error refreshProfile: $e');
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     await SeumaSupabaseService.instance.signOut();
     _currentUser = null;

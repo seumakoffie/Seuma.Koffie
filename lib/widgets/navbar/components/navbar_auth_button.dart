@@ -26,8 +26,19 @@ class NavbarAuthButton extends StatelessWidget {
                 side: BorderSide(color: AppColors.gold.withValues(alpha: 0.3)),
               ),
               offset: const Offset(0, 48),
-              onSelected: (val) {
-                if (val == 'admin_portal') {
+              onSelected: (val) async {
+                if (val == 'refresh_profile') {
+                  await AuthManager.instance.refreshProfile();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Profil diperbarui: ${AuthManager.instance.currentUser?.role.displayName ?? ""}'),
+                        backgroundColor: Colors.green.shade700,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                } else if (val == 'admin_portal') {
                   AdminDashboardDialog.show(context);
                 } else if (val == 'logout') {
                   AuthManager.instance.logout();
@@ -78,6 +89,17 @@ class NavbarAuthButton extends StatelessWidget {
                     ),
                   ),
                 ],
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'refresh_profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.sync_rounded, size: 16, color: Colors.blueAccent),
+                      SizedBox(width: 8),
+                      Text('Perbarui Profil', style: TextStyle(color: Colors.blueAccent, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
                 const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'logout',

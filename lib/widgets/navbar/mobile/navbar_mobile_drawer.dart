@@ -260,6 +260,24 @@ class NavbarMobileDrawer {
                                   AdminDashboardDialog.show(context);
                                 },
                               ),
+                            _buildDrawerTile(
+                              icon: Icons.sync_rounded,
+                              label: 'Perbarui Profil',
+                              badge: 'Refresh Role',
+                              badgeColor: Colors.blueAccent,
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await AuthManager.instance.refreshProfile();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Profil diperbarui: ${AuthManager.instance.currentUser?.role.displayName ?? ""}'),
+                                      backgroundColor: Colors.green.shade700,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
 
                             const SizedBox(height: 14),
                             const Divider(color: Colors.white12),
