@@ -7,8 +7,14 @@
 -- ============================================================================
 -- 1. EKSTENSI KRIPTOGRAFI & UUID
 -- ============================================================================
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- uuid-ossp di-install di schema extensions (Supabase managed)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+-- pgcrypto di-install di schema public agar fungsi digest() & encode() dapat
+-- dipanggil langsung dari trigger SECURITY DEFINER tanpa prefix schema
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA public;
+
+GRANT USAGE ON SCHEMA extensions TO postgres, anon, authenticated, service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA extensions TO postgres, anon, authenticated, service_role;
 
 -- ============================================================================
 -- 2. ENUM TYPES
@@ -276,7 +282,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_iv TEXT := encode(gen_random_bytes(16), 'hex');
+    -- Gunakan md5(now()::text || new.id::text) sebagai IV deterministik
+    -- (tidak memerlukan gen_random_bytes, kompatibel semua versi pgcrypto)
+    v_iv TEXT := md5(now()::text || new.id::text);
 BEGIN
     INSERT INTO public.profiles (id, name, email, phone, role, encryption_iv)
     VALUES (
@@ -289,14 +297,15 @@ BEGIN
     )
     ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
-        email = EXCLUDED.email;
+        email = EXCLUDED.email,
+        updated_at = now();
 
-    -- Tulis blok audit registrasi pengguna baru
+    -- Tulis blok audit registrasi pengguna baru ke Blockchain Ledger
     PERFORM public.append_blockchain_block(
         'USER_REGISTERED',
         new.id,
         new.id::text,
-        jsonb_build_object('email', new.email, 'role', 'customer')
+        jsonb_build_object('email', new.email, 'role', 'customer', 'registered_at', now())
     );
 
     RETURN NEW;
