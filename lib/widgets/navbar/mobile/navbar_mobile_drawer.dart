@@ -271,7 +271,7 @@ class NavbarMobileDrawer {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Profil diperbarui: ${AuthManager.instance.currentUser?.role.displayName ?? ""}'),
+                                      content: Text('Profil diperbarui: ${AuthManager.instance.currentUser?.effectiveRole.displayName ?? ""}'),
                                       backgroundColor: Colors.green.shade700,
                                     ),
                                   );

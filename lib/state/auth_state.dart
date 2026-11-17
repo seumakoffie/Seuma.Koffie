@@ -44,14 +44,14 @@ class AuthManager extends ChangeNotifier {
       // Cek sesi yang sudah tersimpan saat web dibuka
       final currentSession = client.auth.currentSession;
       if (currentSession != null) {
-        _fetchAndSetProfile(currentSession.user.id);
+        _fetchAndSetProfile(currentSession.user.id, email: currentSession.user.email);
       }
 
       // Dengarkan perubahan login / logout secara realtime
       client.auth.onAuthStateChange.listen((data) {
         final session = data.session;
         if (session != null) {
-          _fetchAndSetProfile(session.user.id);
+          _fetchAndSetProfile(session.user.id, email: session.user.email);
         } else {
           _currentUser = null;
           notifyListeners();
@@ -62,11 +62,29 @@ class AuthManager extends ChangeNotifier {
     }
   }
 
-  Future<void> _fetchAndSetProfile(String userId) async {
+  Future<void> _fetchAndSetProfile(String userId, {String? email}) async {
     try {
-      final profile = await SeumaSupabaseService.instance.getProfile(userId);
+      final authUser = SeumaSupabaseService.instance.currentAuthUser;
+      final effectiveEmail = email ?? authUser?.email;
+      final profile = await SeumaSupabaseService.instance.getProfile(userId, email: effectiveEmail);
+      final isOwner = (profile?.email ?? effectiveEmail ?? '').toLowerCase().trim() == 'zarqud@gmail.com';
+
       if (profile != null) {
-        _currentUser = profile;
+        if (isOwner && profile.role != UserRole.admin) {
+          _currentUser = profile.copyWith(role: UserRole.admin, memberTier: 'Super Admin');
+        } else {
+          _currentUser = profile;
+        }
+        notifyListeners();
+      } else if (isOwner) {
+        _currentUser = UserModel(
+          id: userId,
+          name: authUser?.userMetadata?['name']?.toString() ?? 'Nazarul Qudri',
+          email: effectiveEmail ?? 'zarqud@gmail.com',
+          phone: '',
+          role: UserRole.admin,
+          memberTier: 'Super Admin',
+        );
         notifyListeners();
       }
     } catch (e) {
@@ -135,20 +153,25 @@ class AuthManager extends ChangeNotifier {
         _lockoutUntil = null;
 
         // Ambil profil nyata dari database profiles
-        UserModel? profile = await SeumaSupabaseService.instance.getProfile(user.id);
+        UserModel? profile = await SeumaSupabaseService.instance.getProfile(user.id, email: user.email);
         
         // Jika profil belum terambil sesaat setelah trigger
         if (profile == null) {
           await Future.delayed(const Duration(milliseconds: 400));
-          profile = await SeumaSupabaseService.instance.getProfile(user.id);
+          profile = await SeumaSupabaseService.instance.getProfile(user.id, email: user.email);
         }
 
-        _currentUser = profile ?? UserModel(
+        final isOwner = (user.email ?? identifier).toLowerCase().trim() == 'zarqud@gmail.com';
+        final resolvedRole = isOwner ? UserRole.admin : (profile?.role ?? UserRole.customer);
+        final resolvedTier = isOwner ? 'Super Admin' : (profile?.memberTier ?? 'New Member');
+
+        _currentUser = profile?.copyWith(role: resolvedRole, memberTier: resolvedTier) ?? UserModel(
           id: user.id,
           name: user.userMetadata?['name']?.toString() ?? user.email?.split('@').first ?? 'Pelanggan',
           email: user.email ?? identifier,
           phone: user.userMetadata?['phone']?.toString() ?? '',
-          role: UserRole.customer,
+          role: resolvedRole,
+          memberTier: resolvedTier,
         );
 
         _isLoading = false;
@@ -232,10 +255,22 @@ class AuthManager extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final profile = await SeumaSupabaseService.instance.getProfile(authUser.id);
+      final profile = await SeumaSupabaseService.instance.getProfile(authUser.id, email: authUser.email);
+      final isOwner = (authUser.email ?? _currentUser?.email ?? '').toLowerCase().trim() == 'zarqud@gmail.com';
       if (profile != null) {
-        _currentUser = profile;
-        debugPrint('✅ Profil diperbarui: role=${profile.role.name}');
+        if (isOwner) {
+          _currentUser = profile.copyWith(role: UserRole.admin, memberTier: 'Super Admin');
+        } else {
+          _currentUser = profile;
+        }
+        debugPrint('✅ Profil diperbarui: role=${_currentUser!.role.name}');
+      } else if (isOwner) {
+        _currentUser = (_currentUser ?? UserModel(
+          id: authUser.id,
+          name: 'Nazarul Qudri',
+          email: authUser.email!,
+          phone: '',
+        )).copyWith(role: UserRole.admin, memberTier: 'Super Admin');
       }
     } catch (e) {
       debugPrint('Error refreshProfile: $e');

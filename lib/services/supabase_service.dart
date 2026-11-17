@@ -143,13 +143,24 @@ class SeumaSupabaseService {
   // 2. MANAJEMEN AKUN & PROFIL PENGGUNA NYATA
   // ==========================================
 
-  Future<UserModel?> getProfile(String userId) async {
+  Future<UserModel?> getProfile(String userId, {String? email}) async {
     if (client == null) return null;
     try {
       final res = await client!.from('profiles').select().eq('id', userId).maybeSingle();
       if (res != null) return UserModel.fromJson(res);
+
+      if (email != null && email.isNotEmpty) {
+        final resEmail = await client!.from('profiles').select().eq('email', email.trim()).maybeSingle();
+        if (resEmail != null) return UserModel.fromJson(resEmail);
+      }
     } catch (e) {
       debugPrint('Error getProfile: $e');
+      if (email != null && email.isNotEmpty) {
+        try {
+          final resEmail = await client!.from('profiles').select().eq('email', email.trim()).maybeSingle();
+          if (resEmail != null) return UserModel.fromJson(resEmail);
+        } catch (_) {}
+      }
     }
     return null;
   }
@@ -157,7 +168,7 @@ class SeumaSupabaseService {
   Future<UserModel?> getCurrentUserProfile() async {
     final authUser = currentAuthUser;
     if (authUser == null) return null;
-    return getProfile(authUser.id);
+    return getProfile(authUser.id, email: authUser.email);
   }
 
   Future<List<UserModel>> fetchConsumers() async {

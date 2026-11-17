@@ -556,13 +556,17 @@ ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email;
 
 -- ============================================================================
--- 15. PROMOSI AKUN UTAMA MENJADI SUPER ADMIN (JALANKAN SESUAI KEBUTUHAN)
--- Hapus tanda komentar (--) pada baris di bawah jika Anda ingin akun Anda
--- langsung menjadi Super Admin saat ini juga:
+-- 15. PROMOSI AKUN UTAMA MENJADI SUPER ADMIN & VERIFIKASI
 -- ============================================================================
--- UPDATE public.profiles 
--- SET role = 'admin', member_tier = 'Super Admin' 
--- WHERE email = 'zarqud@gmail.com';
+UPDATE public.profiles 
+SET role = 'admin', 
+    member_tier = 'Super Admin' 
+WHERE email = 'zarqud@gmail.com';
+
+-- Verifikasi data profil akun admin
+SELECT id, name, email, role, member_tier 
+FROM public.profiles 
+WHERE email = 'zarqud@gmail.com';
 
 -- ============================================================================
 -- SELESAI. Database Seuma.Koffie 100% Terintegrasi, Realtime & Blockchain Ready!

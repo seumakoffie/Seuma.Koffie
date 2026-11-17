@@ -32,7 +32,7 @@ class NavbarAuthButton extends StatelessWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Profil diperbarui: ${AuthManager.instance.currentUser?.role.displayName ?? ""}'),
+                        content: Text('Profil diperbarui: ${AuthManager.instance.currentUser?.effectiveRole.displayName ?? ""}'),
                         backgroundColor: Colors.green.shade700,
                         duration: const Duration(seconds: 3),
                       ),
@@ -66,7 +66,7 @@ class NavbarAuthButton extends StatelessWidget {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              user.role.displayName,
+                              user.effectiveRole.displayName,
                               style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Colors.white),
                             ),
                           ),
