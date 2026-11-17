@@ -65,17 +65,19 @@ class NavbarAuthButton extends StatelessWidget {
                     ],
                   ),
                 ),
-                const PopupMenuDivider(),
-                const PopupMenuItem(
-                  value: 'admin_portal',
-                  child: Row(
-                    children: [
-                      Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.gold),
-                      SizedBox(width: 8),
-                      Text('Buka Portal Admin & Shift', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
-                    ],
+                if (user.hasStaffAccess) ...[
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: 'admin_portal',
+                    child: Row(
+                      children: [
+                        Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.gold),
+                        SizedBox(width: 8),
+                        Text('Buka Portal Admin & Shift', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
                   ),
-                ),
+                ],
                 const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'logout',

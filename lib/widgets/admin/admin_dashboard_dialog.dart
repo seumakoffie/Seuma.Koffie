@@ -13,6 +13,29 @@ class AdminDashboardDialog extends StatefulWidget {
   const AdminDashboardDialog({super.key});
 
   static Future<void> show(BuildContext context) {
+    if (!AuthManager.instance.hasStaffAccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.espresso,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: const Row(
+            children: [
+              Icon(Icons.lock_outline_rounded, color: AppColors.gold),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Akses Terbatas: Portal ini khusus untuk Administrator & Staf Shift Seuma.Koffie.',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return Future.value();
+    }
+
     AdminManager.instance.loadAllData();
     return showDialog(
       context: context,

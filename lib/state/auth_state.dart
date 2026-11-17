@@ -63,10 +63,46 @@ class AuthManager extends ChangeNotifier {
   }
 
   Future<void> _fetchAndSetProfile(String userId) async {
-    final profile = await SeumaSupabaseService.instance.getProfile(userId);
+    UserModel? profile = await SeumaSupabaseService.instance.getProfile(userId);
     if (profile != null) {
       _currentUser = profile;
       notifyListeners();
+      return;
+    }
+
+    // Auto-heal: Jika akun ada di auth.users tapi belum ada di public.profiles,
+    // langsung buat baris profilnya agar data tersinkron sempurna di database.
+    final authUser = SeumaSupabaseService.instance.currentAuthUser;
+    if (authUser != null && authUser.id == userId) {
+      try {
+        final client = SeumaSupabaseService.instance.client;
+        if (client != null) {
+          final fallbackName = authUser.userMetadata?['name']?.toString() ??
+              authUser.email?.split('@').first ??
+              'Pelanggan';
+          final fallbackPhone = authUser.userMetadata?['phone']?.toString() ?? '';
+          
+          await client.from('profiles').upsert({
+            'id': authUser.id,
+            'name': fallbackName,
+            'email': authUser.email ?? '',
+            'phone': fallbackPhone,
+            'role': 'customer',
+            'member_tier': 'New Member',
+            'points': 100,
+            'encryption_iv': authUser.id.replaceAll('-', '').substring(0, 16),
+          });
+
+          profile = await SeumaSupabaseService.instance.getProfile(userId);
+          if (profile != null) {
+            _currentUser = profile;
+            notifyListeners();
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint('Auto-heal profile sync info: $e');
+      }
     }
   }
 

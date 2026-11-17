@@ -249,16 +249,17 @@ class NavbarMobileDrawer {
                                 onShowAuth();
                               },
                             ),
-                            _buildDrawerTile(
-                              icon: Icons.admin_panel_settings_rounded,
-                              label: 'Portal Admin & Penjaga Shift',
-                              badge: 'Pesanan & Shift',
-                              badgeColor: const Color(0xFFD4AF37),
-                              onTap: () {
-                                Navigator.pop(context);
-                                AdminDashboardDialog.show(context);
-                              },
-                            ),
+                            if (AuthManager.instance.hasStaffAccess)
+                              _buildDrawerTile(
+                                icon: Icons.admin_panel_settings_rounded,
+                                label: 'Portal Admin & Penjaga Shift',
+                                badge: 'Pesanan & Shift',
+                                badgeColor: const Color(0xFFD4AF37),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  AdminDashboardDialog.show(context);
+                                },
+                              ),
 
                             const SizedBox(height: 14),
                             const Divider(color: Colors.white12),

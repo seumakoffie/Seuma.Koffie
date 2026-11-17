@@ -338,6 +338,28 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- ============================================================================
+-- SINKRONISASI AKUN LAMA KE TABEL PROFILES (BACKFILL AUTOMATIC SYNC)
+-- Memastikan semua user yang sudah mendaftar di auth.users otomatis masuk
+-- ============================================================================
+INSERT INTO public.profiles (id, name, email, phone, role, encryption_iv, member_tier, points)
+SELECT 
+    u.id,
+    COALESCE(u.raw_user_meta_data->>'name', split_part(u.email, '@', 1)) AS name,
+    u.email,
+    COALESCE(u.raw_user_meta_data->>'phone', '') AS phone,
+    'customer'::user_role AS role,
+    md5(now()::text || u.id::text) AS encryption_iv,
+    'New Member' AS member_tier,
+    100 AS points
+FROM auth.users u
+LEFT JOIN public.profiles p ON p.id = u.id
+WHERE p.id IS NULL
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    email = EXCLUDED.email,
+    updated_at = now();
+
 -- Trigger saat Role diubah oleh Admin/Owner
 CREATE OR REPLACE FUNCTION public.handle_role_change_audit()
 RETURNS TRIGGER AS $$
