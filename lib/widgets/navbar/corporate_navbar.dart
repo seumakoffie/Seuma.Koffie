@@ -11,6 +11,8 @@ import 'components/navbar_cart_button.dart';
 import 'components/navbar_order_button.dart';
 import 'mobile/navbar_mobile_drawer.dart';
 import 'mega_menu/mega_menu_container.dart';
+import '../../state/auth_state.dart';
+import '../admin/admin_dashboard_dialog.dart';
 
 class CorporateNavbar extends StatefulWidget {
   final VoidCallback onOrderNow;
@@ -223,6 +225,52 @@ class _CorporateNavbarState extends State<CorporateNavbar>
           onTap: widget.onExploreMenu,
         ),
         const SizedBox(width: 14),
+        ListenableBuilder(
+          listenable: AuthManager.instance,
+          builder: (context, _) {
+            if (!AuthManager.instance.hasStaffAccess) return const SizedBox.shrink();
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () => AdminDashboardDialog.show(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFD4AF37), Color(0xFFAA7C11)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          AuthManager.instance.isAdmin ? Icons.admin_panel_settings : Icons.access_time_filled,
+                          size: 15,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          AuthManager.instance.isAdmin ? 'Admin Portal' : 'Shift Board',
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
+            );
+          },
+        ),
         NavbarAuthButton(onShowAuth: widget.onShowAuth),
         const SizedBox(width: 10),
         NavbarCartButton(onShowCart: widget.onShowCart),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../state/auth_state.dart';
 import '../components/navbar_logo.dart';
+import '../../admin/admin_dashboard_dialog.dart';
 
 class NavbarMobileDrawer {
   static void show(
@@ -246,6 +247,16 @@ class NavbarMobileDrawer {
                               onTap: () {
                                 Navigator.pop(context);
                                 onShowAuth();
+                              },
+                            ),
+                            _buildDrawerTile(
+                              icon: Icons.admin_panel_settings_rounded,
+                              label: 'Portal Admin & Penjaga Shift',
+                              badge: 'Pesanan & Shift',
+                              badgeColor: const Color(0xFFD4AF37),
+                              onTap: () {
+                                Navigator.pop(context);
+                                AdminDashboardDialog.show(context);
                               },
                             ),
 

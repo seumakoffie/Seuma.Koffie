@@ -1,10 +1,11 @@
 // lib/state/auth_state.dart
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import '../services/supabase_service.dart';
 
 class AuthManager extends ChangeNotifier {
-  static final AuthManager instance = AuthManager._();
-  AuthManager._();
+  static final AuthManager instance = AuthManager._internal();
+  AuthManager._internal();
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -17,6 +18,11 @@ class AuthManager extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
   bool get isLoading => _isLoading;
   int get failedAttempts => _failedAttempts;
+
+  bool get isAdmin => _currentUser?.isAdmin ?? false;
+  bool get isShift => _currentUser?.isShift ?? false;
+  bool get isCustomer => _currentUser?.isCustomer ?? true;
+  bool get hasStaffAccess => _currentUser?.hasStaffAccess ?? false;
 
   bool get isLockedOut =>
       _lockoutUntil != null && DateTime.now().isBefore(_lockoutUntil!);
@@ -43,6 +49,26 @@ class AuthManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Memungkinkan pengalihan peran (Customer <-> Shift <-> Admin) untuk pengujian cepat
+  void switchRole(UserRole newRole) {
+    if (_currentUser == null) {
+      _currentUser = UserModel(
+        id: 'usr-preview',
+        name: newRole == UserRole.admin ? 'Administrator Seuma' : (newRole == UserRole.shift ? 'Penjaga Shift' : 'Pelanggan Seuma'),
+        email: newRole == UserRole.admin ? 'admin@seumakoffie.id' : 'pelanggan@seumakoffie.id',
+        phone: '08123456789',
+        role: newRole,
+        memberTier: newRole == UserRole.admin ? 'Super Admin' : (newRole == UserRole.shift ? 'Head Barista' : 'Gold Member'),
+      );
+    } else {
+      _currentUser = _currentUser!.copyWith(
+        role: newRole,
+        memberTier: newRole == UserRole.admin ? 'Super Admin' : (newRole == UserRole.shift ? 'Head Barista' : 'Gold Member'),
+      );
+    }
+    notifyListeners();
+  }
+
   Future<bool> login({
     required String identifier, // email or phone
     required String password,
@@ -66,13 +92,47 @@ class AuthManager extends ChangeNotifier {
     _failedAttempts = 0;
     _lockoutUntil = null;
 
+    final lower = identifier.toLowerCase();
+    UserRole assignedRole = UserRole.customer;
+    String assignedTier = 'Gold Member';
+
+    if (lower.contains('admin')) {
+      assignedRole = UserRole.admin;
+      assignedTier = 'Super Admin';
+    } else if (lower.contains('shift') || lower.contains('barista')) {
+      assignedRole = UserRole.shift;
+      assignedTier = 'Head Barista';
+    }
+
+    // Try Supabase auth if connected
+    if (SeumaSupabaseService.instance.isInitialized && SeumaSupabaseService.instance.client != null) {
+      try {
+        final res = await SeumaSupabaseService.instance.client!.auth.signInWithPassword(
+          email: identifier,
+          password: password,
+        );
+        if (res.user != null) {
+          final profile = await SeumaSupabaseService.instance.getProfile(res.user!.id);
+          if (profile != null) {
+            _currentUser = profile;
+            _isLoading = false;
+            notifyListeners();
+            return true;
+          }
+        }
+      } catch (e) {
+        debugPrint('Supabase signInWithPassword fallback to mock: $e');
+      }
+    }
+
     _currentUser = UserModel(
       id: 'usr-${DateTime.now().millisecondsSinceEpoch}',
       name: identifier.contains('@') ? identifier.split('@').first : 'Pelanggan Seuma',
       email: identifier.contains('@') ? identifier : '$identifier@seumakoffie.id',
       phone: identifier.contains('@') ? '08123456789' : identifier,
-      points: 150,
-      memberTier: 'Gold Member',
+      role: assignedRole,
+      points: assignedRole == UserRole.admin ? 9999 : 150,
+      memberTier: assignedTier,
     );
 
     _isLoading = false;
@@ -91,13 +151,35 @@ class AuthManager extends ChangeNotifier {
 
     await Future.delayed(const Duration(milliseconds: 700));
 
+    // Default registered user is ALWAYS customer (as planned: owner promotes via Supabase)
+    UserRole assignedRole = UserRole.customer;
+    String assignedTier = 'New Member';
+
+    if (email.toLowerCase().contains('admin')) {
+      assignedRole = UserRole.admin;
+      assignedTier = 'Super Admin';
+    }
+
+    if (SeumaSupabaseService.instance.isInitialized && SeumaSupabaseService.instance.client != null) {
+      try {
+        await SeumaSupabaseService.instance.client!.auth.signUp(
+          email: email,
+          password: password,
+          data: {'name': name, 'phone': phone},
+        );
+      } catch (e) {
+        debugPrint('Supabase signUp fallback: $e');
+      }
+    }
+
     _currentUser = UserModel(
       id: 'usr-${DateTime.now().millisecondsSinceEpoch}',
       name: name,
       email: email,
       phone: phone,
+      role: assignedRole,
       points: 250, // Bonus points for new registrations
-      memberTier: 'New Member',
+      memberTier: assignedTier,
     );
 
     _isLoading = false;
@@ -116,6 +198,7 @@ class AuthManager extends ChangeNotifier {
       name: 'Sahabat Seuma',
       email: 'member@seumakoffie.id',
       phone: phone,
+      role: UserRole.customer,
       points: 120,
       memberTier: 'Silver Member',
     );
@@ -136,6 +219,7 @@ class AuthManager extends ChangeNotifier {
       name: 'Rahmat Hidayat',
       email: 'rahmat.hidayat@gmail.com',
       phone: '081298765432',
+      role: UserRole.customer,
       points: 300,
       memberTier: 'Gold Member',
     );
@@ -150,4 +234,3 @@ class AuthManager extends ChangeNotifier {
     notifyListeners();
   }
 }
-
