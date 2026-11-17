@@ -441,10 +441,10 @@ RETURNS BOOLEAN AS $$
     );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- Profiles Policies
+-- Profiles Policies (Bebas dari Rekursi RLS)
 DROP POLICY IF EXISTS "Profiles read policy" ON public.profiles;
 CREATE POLICY "Profiles read policy" ON public.profiles 
-    FOR SELECT USING (auth.uid() = id OR public.is_staff_or_admin());
+    FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Profiles insert policy" ON public.profiles;
 CREATE POLICY "Profiles insert policy" ON public.profiles 
