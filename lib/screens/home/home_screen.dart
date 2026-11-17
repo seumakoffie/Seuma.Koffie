@@ -15,6 +15,7 @@ import '../../widgets/auth/welcome_order_prompt_dialog.dart';
 import '../../state/auth_state.dart';
 import '../../widgets/product_dialog.dart';
 import '../../widgets/story_and_quiz_section.dart';
+import '../../widgets/customer/live_order_tracker_banner.dart';
 import 'widgets/notification_strip.dart';
 import 'widgets/menu_catalog_section.dart';
 
@@ -204,6 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
               scrollController: _scrollController,
             ),
           ),
+
+          // Realtime Live Order Tracking Floating Banner (Consumer & Admin sync)
+          const LiveOrderTrackerBanner(),
         ],
       ),
 

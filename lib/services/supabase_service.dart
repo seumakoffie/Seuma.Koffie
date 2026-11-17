@@ -1,4 +1,5 @@
 // lib/services/supabase_service.dart
+import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -20,11 +21,35 @@ class SeumaSupabaseService {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
+  final StreamController<List<OrderModel>> _ordersStreamController =
+      StreamController<List<OrderModel>>.broadcast();
+
   SupabaseClient? get client {
     try {
       if (_isInitialized) return Supabase.instance.client;
     } catch (_) {}
     return null;
+  }
+
+  Stream<List<OrderModel>> get ordersStream {
+    if (_isInitialized && client != null) {
+      try {
+        return client!
+            .from('orders')
+            .stream(primaryKey: ['id'])
+            .order('created_at', ascending: false)
+            .map((data) {
+              return data.map((json) => OrderModel.fromJson(json)).toList();
+            });
+      } catch (e) {
+        debugPrint('Error creating Supabase orders stream, using broadcast controller: $e');
+      }
+    }
+    return _ordersStreamController.stream;
+  }
+
+  void notifyOrdersChanged() {
+    _ordersStreamController.add(List.unmodifiable(_mockOrders));
   }
 
   Future<void> initialize() async {
@@ -162,9 +187,27 @@ class SeumaSupabaseService {
     final index = _mockOrders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
       _mockOrders[index] = _mockOrders[index].copyWith(status: newStatus);
+      notifyOrdersChanged();
       return true;
     }
     return false;
+  }
+
+  Future<bool> placeCustomerOrder(OrderModel order) async {
+    if (_isInitialized && client != null) {
+      try {
+        await client!.from('orders').insert(order.toJson());
+        for (final it in order.items) {
+          await client!.from('order_items').insert(it.toJson());
+        }
+      } catch (e) {
+        debugPrint('Supabase placeCustomerOrder fallback: $e');
+      }
+    }
+
+    _mockOrders.insert(0, order);
+    notifyOrdersChanged();
+    return true;
   }
 
   Future<bool> verifyDeliveryAtLocation({
@@ -236,6 +279,7 @@ class SeumaSupabaseService {
           blockHash: blockHash,
         ),
       );
+      notifyOrdersChanged();
       return true;
     }
     return false;

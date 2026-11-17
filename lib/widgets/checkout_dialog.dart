@@ -1,5 +1,7 @@
 // lib/widgets/checkout_dialog.dart
 import 'package:flutter/material.dart';
+import '../models/order_model.dart';
+import '../state/admin_state.dart';
 import '../state/auth_state.dart';
 import '../state/cart_state.dart';
 import '../theme/app_theme.dart';
@@ -292,7 +294,37 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                             }
                             setState(() => _step = 2);
                           } else {
-                            // Process order
+                            // Realtime Broadcast order creation (Consumer -> Supabase & Admin Live)
+                            final cart = CartManager.instance;
+                            final newOrder = OrderModel(
+                              id: 'ord-${DateTime.now().millisecondsSinceEpoch}',
+                              orderNumber: _orderId,
+                              userId: AuthManager.instance.currentUser?.id,
+                              totalAmount: cart.grandTotal.toDouble(),
+                              status: OrderStatus.pending,
+                              paymentMethod: PaymentMethod.fromString(_selectedPayment),
+                              paymentStatus: _selectedPayment == 'qris' || _selectedPayment == 'gopay' ? 'paid' : 'unpaid',
+                              recipientName: _nameController.text.trim(),
+                              recipientPhone: _phoneController.text.trim(),
+                              deliveryAddress: _isDelivery ? _addressController.text.trim() : 'Ambil di Outlet Seuma Pusat Lhokseumawe',
+                              deliveryNotes: _isDelivery ? 'Antar kilat 15-20 menit se-Lhokseumawe' : 'Pesanan takeaway outlet',
+                              deliveryLat: 5.1801,
+                              deliveryLng: 97.1407,
+                              createdAt: DateTime.now(),
+                              items: cart.items.map((ci) => OrderItemModel(
+                                id: ci.id,
+                                orderId: _orderId,
+                                menuId: ci.menuItemId,
+                                menuName: ci.name,
+                                variant: ci.isHot ? 'Hot' : 'Iced',
+                                price: ci.unitPrice.toDouble(),
+                                quantity: ci.quantity,
+                                subtotal: ci.totalPrice.toDouble(),
+                                specialNotes: ci.extraShot ? 'Ekstra shot' : null,
+                              )).toList(),
+                            );
+                            AdminManager.instance.placeNewCustomerOrder(newOrder);
+
                             setState(() => _isSuccess = true);
                           }
                         },

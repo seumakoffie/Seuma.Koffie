@@ -1,4 +1,5 @@
 // lib/state/admin_state.dart
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../models/order_model.dart';
@@ -41,6 +42,10 @@ class AdminManager extends ChangeNotifier {
   OrderStatus? _orderFilter;
   OrderStatus? get orderFilter => _orderFilter;
 
+  StreamSubscription<List<OrderModel>>? _ordersSubscription;
+  bool _isRealtimeConnected = false;
+  bool get isRealtimeConnected => _isRealtimeConnected;
+
   void setSelectedTab(int index) {
     _selectedTabIndex = index;
     notifyListeners();
@@ -56,6 +61,17 @@ class AdminManager extends ChangeNotifier {
     return _orders.where((o) => o.status == _orderFilter).toList();
   }
 
+  void startRealtimeOrdersListener() {
+    _ordersSubscription?.cancel();
+    _ordersSubscription = SeumaSupabaseService.instance.ordersStream.listen((liveOrders) {
+      if (liveOrders.isNotEmpty) {
+        _orders = liveOrders;
+        _isRealtimeConnected = true;
+        notifyListeners();
+      }
+    });
+  }
+
   Future<void> loadAllData() async {
     _isLoading = true;
     notifyListeners();
@@ -68,6 +84,8 @@ class AdminManager extends ChangeNotifier {
       _orders = await s.fetchOrders();
       _blockchainBlocks = await s.fetchBlockchainBlocks();
       _blockchainStatus = await s.verifyBlockchainIntegrity();
+
+      startRealtimeOrdersListener();
     } catch (e) {
       debugPrint('Error loading admin data: $e');
     } finally {
@@ -118,9 +136,23 @@ class AdminManager extends ChangeNotifier {
     return success;
   }
 
+  Future<bool> placeNewCustomerOrder(OrderModel order) async {
+    final success = await SeumaSupabaseService.instance.placeCustomerOrder(order);
+    if (success) {
+      notifyListeners();
+    }
+    return success;
+  }
+
   Future<void> auditBlockchainIntegrity() async {
     _blockchainStatus = await SeumaSupabaseService.instance.verifyBlockchainIntegrity();
     _blockchainBlocks = await SeumaSupabaseService.instance.fetchBlockchainBlocks();
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _ordersSubscription?.cancel();
+    super.dispose();
   }
 }
