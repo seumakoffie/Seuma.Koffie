@@ -174,12 +174,31 @@ class SeumaSupabaseService {
   Future<List<UserModel>> fetchConsumers() async {
     if (client == null) return [];
     try {
-      final res = await client!
-          .from('profiles')
-          .select()
-          .eq('role', 'customer')
-          .order('created_at', ascending: false);
-      return (res as List).map((e) => UserModel.fromJson(e)).toList();
+      dynamic res;
+      try {
+        res = await client!
+            .from('profiles')
+            .select()
+            .eq('role', 'customer')
+            .order('created_at', ascending: false);
+      } catch (_) {
+        try {
+          res = await client!
+              .from('profiles')
+              .select()
+              .eq('role', 'customer');
+        } catch (_) {
+          res = await client!.from('profiles').select();
+        }
+      }
+
+      if (res is List) {
+        return res
+            .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
+            .where((u) => u.role == UserRole.customer)
+            .toList();
+      }
+      return [];
     } catch (e) {
       debugPrint('Error fetchConsumers from Supabase: $e');
       return [];
@@ -189,12 +208,31 @@ class SeumaSupabaseService {
   Future<List<UserModel>> fetchShiftKeepers() async {
     if (client == null) return [];
     try {
-      final res = await client!
-          .from('profiles')
-          .select()
-          .or('role.eq.shift,role.eq.admin')
-          .order('created_at', ascending: false);
-      return (res as List).map((e) => UserModel.fromJson(e)).toList();
+      dynamic res;
+      try {
+        res = await client!
+            .from('profiles')
+            .select()
+            .or('role.eq.shift,role.eq.admin')
+            .order('created_at', ascending: false);
+      } catch (_) {
+        try {
+          res = await client!
+              .from('profiles')
+              .select()
+              .or('role.eq.shift,role.eq.admin');
+        } catch (_) {
+          res = await client!.from('profiles').select();
+        }
+      }
+
+      if (res is List) {
+        return res
+            .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
+            .where((u) => u.role == UserRole.shift || u.role == UserRole.admin)
+            .toList();
+      }
+      return [];
     } catch (e) {
       debugPrint('Error fetchShiftKeepers: $e');
       return [];

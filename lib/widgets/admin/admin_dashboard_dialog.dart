@@ -78,7 +78,7 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
       listenable: Listenable.merge([auth, admin]),
       builder: (context, _) {
         final currentUser = auth.currentUser;
-        final currentRole = currentUser?.role ?? UserRole.admin;
+        final currentRole = currentUser?.effectiveRole ?? UserRole.admin;
 
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
