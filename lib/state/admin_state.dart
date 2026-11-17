@@ -139,7 +139,7 @@ class AdminManager extends ChangeNotifier {
   Future<bool> placeNewCustomerOrder(OrderModel order) async {
     final success = await SeumaSupabaseService.instance.placeCustomerOrder(order);
     if (success) {
-      notifyListeners();
+      await loadAllData();
     }
     return success;
   }

@@ -152,16 +152,16 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
       return;
     }
 
-    bool success = false;
+    String? errorMsg;
     if (_isRegister) {
-      success = await auth.register(
+      errorMsg = await auth.register(
         name: _nameCtrl.text.trim(),
         email: email,
         phone: _phoneCtrl.text.trim().isEmpty ? '08123456789' : _phoneCtrl.text.trim(),
         password: pass,
       );
     } else {
-      success = await auth.login(
+      errorMsg = await auth.login(
         identifier: email,
         password: pass,
       );
@@ -169,7 +169,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
 
     if (!mounted) return;
 
-    if (success) {
+    if (errorMsg == null) {
       Navigator.of(context).pop();
       widget.onAuthSuccess?.call();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -184,7 +184,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               Expanded(
                 child: Text(
                   _isRegister
-                      ? 'Selamat datang, ${auth.currentUser?.name}! Data Anda aman dengan enkripsi E2EE.'
+                      ? 'Selamat datang, ${auth.currentUser?.name}! Data Anda aman tersimpan di Supabase.'
                       : 'Selamat datang kembali, ${auth.currentUser?.name}!',
                   style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
                 ),
@@ -193,7 +193,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
           ),
         ),
       );
-    } else if (!_isRegister) {
+    } else {
       if (auth.isLockedOut) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -215,19 +215,18 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
           ),
         );
       } else {
-        final remaining = 3 - auth.failedAttempts;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: Colors.orange.shade900,
+            backgroundColor: Colors.red.shade900,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             content: Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                const Icon(Icons.error_outline, color: Colors.white),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '⚠️ Password salah (min 4 karakter). Sisa percobaan sebelum lockout: ${remaining > 0 ? remaining : 1}x.',
+                    errorMsg,
                     style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
                   ),
                 ),
