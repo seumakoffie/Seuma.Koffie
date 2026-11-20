@@ -1,33 +1,14 @@
 // lib/state/auth_state.dart
 import 'dart:async';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:js_interop' show JS;
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../services/supabase_service.dart';
 
-/// Ambil atau buat fingerprint permanen di localStorage browser
-String _getOrCreateDeviceFingerprint() {
-  if (!kIsWeb) {
-    return 'seuma-native-device';
-  }
-  try {
-    final existing = _localStorageGet('seuma_device_fp');
-    if (existing != null && existing.isNotEmpty) return existing;
-    final newFp = 'seuma-web-${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
-    _localStorageSet('seuma_device_fp', newFp);
-    return newFp;
-  } catch (_) {
-    return 'seuma-web-fallback';
-  }
-}
-
-@JS('window.localStorage.getItem')
-external String? _localStorageGet(String key);
-
-@JS('window.localStorage.setItem')
-external void _localStorageSet(String key, String value);
+// Fingerprint statis per sesi app — dibuat sekali saat app pertama dibuka
+// Ini cukup untuk mendeteksi tab/browser berbeda dalam satu login session
+final String _sessionDeviceFingerprint =
+    'seuma-web-${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
 
 class AuthManager extends ChangeNotifier {
   static final AuthManager instance = AuthManager._internal();
@@ -40,7 +21,7 @@ class AuthManager extends ChangeNotifier {
   bool _isRememberMe = true;
 
   // Pelacakan Perangkat & Multi-Device Alert
-  final String _currentDeviceFingerprint = _getOrCreateDeviceFingerprint();
+  final String _currentDeviceFingerprint = _sessionDeviceFingerprint;
   List<Map<String, dynamic>> _activeDeviceSessions = [];
   StreamSubscription<List<Map<String, dynamic>>>? _deviceSessionSub;
 
