@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     encryption_iv TEXT,            -- Inisialisasi Vektor unik E2EE
     
     role user_role NOT NULL DEFAULT 'customer',
-    member_tier TEXT NOT NULL DEFAULT 'New Member',
-    points INT NOT NULL DEFAULT 100,
+    member_tier TEXT NOT NULL DEFAULT 'Member',
+    points INT NOT NULL DEFAULT 0,
     avatar_url TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     
@@ -75,8 +75,8 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_notes TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_encrypted TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS encryption_iv TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS member_tier TEXT NOT NULL DEFAULT 'New Member';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 100;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS member_tier TEXT NOT NULL DEFAULT 'Member';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 0;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
@@ -539,8 +539,8 @@ EXCEPTION WHEN others THEN null; END $$;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_encrypted TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS encryption_iv TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS member_tier TEXT NOT NULL DEFAULT 'New Member';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 100;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS member_tier TEXT NOT NULL DEFAULT 'Member';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 0;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
 
@@ -552,8 +552,8 @@ SELECT
     COALESCE(u.raw_user_meta_data->>'phone', ''),
     'customer'::user_role,
     md5(now()::text || u.id::text),
-    'New Member',
-    100
+    'Member',
+    0
 FROM auth.users u
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,

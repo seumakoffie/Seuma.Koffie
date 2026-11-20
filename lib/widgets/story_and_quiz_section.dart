@@ -383,64 +383,6 @@ class _StoryAndQuizSectionState extends State<StoryAndQuizSection>
             ),
 
             const SizedBox(height: 36),
-
-            // ==========================================
-            // 3. PROMO VOUCHER BANNER
-            // ==========================================
-            Container(
-              padding: EdgeInsets.all(isDesktop ? 28 : 18),
-              decoration: BoxDecoration(
-                gradient: AppColors.caramelGradient,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.caramel.withValues(alpha: 0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Text('🎁', style: TextStyle(fontSize: 36)),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Voucher Diskon Spesial: SEUMAFIRST',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Dapatkan potongan Rp 15.000 untuk pesanan pertamamu di web Seuma!',
-                          style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.9)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Clipboard.setData(const ClipboardData(text: 'SEUMAFIRST'));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Kode voucher SEUMAFIRST disalin!')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.espresso,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Salin Kode', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

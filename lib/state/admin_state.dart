@@ -43,6 +43,7 @@ class AdminManager extends ChangeNotifier {
   OrderStatus? get orderFilter => _orderFilter;
 
   StreamSubscription<List<OrderModel>>? _ordersSubscription;
+  StreamSubscription<List<UserModel>>? _consumersSubscription;
   bool _isRealtimeConnected = false;
   bool get isRealtimeConnected => _isRealtimeConnected;
 
@@ -72,6 +73,14 @@ class AdminManager extends ChangeNotifier {
     });
   }
 
+  void startRealtimeConsumersListener() {
+    _consumersSubscription?.cancel();
+    _consumersSubscription = SeumaSupabaseService.instance.consumersStream.listen((liveConsumers) {
+      _consumers = liveConsumers;
+      notifyListeners();
+    });
+  }
+
   Future<void> loadAllData() async {
     _isLoading = true;
     notifyListeners();
@@ -86,6 +95,7 @@ class AdminManager extends ChangeNotifier {
       _blockchainStatus = await s.verifyBlockchainIntegrity();
 
       startRealtimeOrdersListener();
+      startRealtimeConsumersListener();
     } catch (e) {
       debugPrint('Error loading admin data: $e');
     } finally {

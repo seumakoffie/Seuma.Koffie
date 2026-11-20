@@ -160,8 +160,8 @@ class NavbarMobileDrawer {
                                             const SizedBox(height: 2),
                                             Text(
                                               isLoggedIn
-                                                  ? '🌟 ${user.memberTier} • ${user.points} Poin'
-                                                  : 'Masuk / Daftar untuk promo',
+                                                  ? (user.hasStaffAccess ? '👑 ${user.memberTier}' : '☕ Member Seuma.Koffie')
+                                                  : 'Masuk / Daftar Akun',
                                               style: const TextStyle(
                                                 color: Color(0xFFFFD54F),
                                                 fontSize: 11,
@@ -209,16 +209,6 @@ class NavbarMobileDrawer {
                               onTap: () {
                                 Navigator.pop(context);
                                 onExploreMenu();
-                              },
-                            ),
-                            _buildDrawerTile(
-                              icon: Icons.bolt_rounded,
-                              label: 'Promo Kilat & Diskon',
-                              badge: 'Hemat s/d 30%',
-                              badgeColor: const Color(0xFFFF5722),
-                              onTap: () {
-                                Navigator.pop(context);
-                                onScrollToPromo();
                               },
                             ),
                             _buildDrawerTile(

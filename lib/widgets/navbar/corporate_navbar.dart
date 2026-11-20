@@ -205,12 +205,6 @@ class _CorporateNavbarState extends State<CorporateNavbar>
               onHover: () => _openMenu('about'),
             ),
             NavbarNavLink(
-              label: 'Promo',
-              isOpen: _openDropdown == 'promo',
-              onTap: () => _toggleMenu('promo'),
-              onHover: () => _openMenu('promo'),
-            ),
-            NavbarNavLink(
               label: 'Lokasi',
               isOpen: _openDropdown == 'location',
               onTap: () => _toggleMenu('location'),

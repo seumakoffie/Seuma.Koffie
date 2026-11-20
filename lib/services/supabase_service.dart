@@ -24,11 +24,33 @@ class SeumaSupabaseService {
   final StreamController<List<OrderModel>> _ordersStreamController =
       StreamController<List<OrderModel>>.broadcast();
 
+  final StreamController<List<UserModel>> _consumersStreamController =
+      StreamController<List<UserModel>>.broadcast();
+
   SupabaseClient? get client {
     try {
       if (_isInitialized) return Supabase.instance.client;
     } catch (_) {}
     return null;
+  }
+
+  Stream<List<UserModel>> get consumersStream {
+    if (_isInitialized && client != null) {
+      try {
+        return client!
+            .from('profiles')
+            .stream(primaryKey: ['id'])
+            .map((data) {
+              return data
+                  .map((json) => UserModel.fromJson(json))
+                  .where((u) => u.role == UserRole.customer)
+                  .toList();
+            });
+      } catch (e) {
+        debugPrint('Supabase profiles stream error, fallback to broadcast: $e');
+      }
+    }
+    return _consumersStreamController.stream;
   }
 
   Stream<List<OrderModel>> get ordersStream {
@@ -103,8 +125,8 @@ class SeumaSupabaseService {
           'email': email.trim(),
           'phone': phone.trim(),
           'role': 'customer',
-          'member_tier': 'New Member',
-          'points': 100,
+          'member_tier': 'Member',
+          'points': 0,
           'encryption_iv': user.id.replaceAll('-', '').substring(0, 16),
         });
       } catch (e) {
@@ -193,10 +215,12 @@ class SeumaSupabaseService {
       }
 
       if (res is List) {
-        return res
+        final list = res
             .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
             .where((u) => u.role == UserRole.customer)
             .toList();
+        _consumersStreamController.add(List.unmodifiable(list));
+        return list;
       }
       return [];
     } catch (e) {

@@ -117,12 +117,12 @@ class AuthManager extends ChangeNotifier {
         email: newRole == UserRole.admin ? 'admin@seumakoffie.id' : 'pelanggan@seumakoffie.id',
         phone: '08123456789',
         role: newRole,
-        memberTier: newRole == UserRole.admin ? 'Super Admin' : (newRole == UserRole.shift ? 'Head Barista' : 'Gold Member'),
+        memberTier: newRole == UserRole.admin ? 'Super Admin' : (newRole == UserRole.shift ? 'Head Barista' : 'Member'),
       );
     } else {
       _currentUser = _currentUser!.copyWith(
         role: newRole,
-        memberTier: newRole == UserRole.admin ? 'Super Admin' : (newRole == UserRole.shift ? 'Head Barista' : 'Gold Member'),
+        memberTier: newRole == UserRole.admin ? 'Super Admin' : (newRole == UserRole.shift ? 'Head Barista' : 'Member'),
       );
     }
     notifyListeners();
@@ -163,7 +163,7 @@ class AuthManager extends ChangeNotifier {
 
         final isOwner = UserModel.isSuperAdminEmail(user.email ?? identifier);
         final resolvedRole = (isOwner || profile?.role == UserRole.admin) ? UserRole.admin : (profile?.role ?? UserRole.customer);
-        final resolvedTier = (isOwner || profile?.role == UserRole.admin) ? (profile?.memberTier.isNotEmpty == true && profile?.memberTier != 'New Member' ? profile!.memberTier : 'Super Admin') : (profile?.memberTier ?? 'New Member');
+        final resolvedTier = (isOwner || profile?.role == UserRole.admin) ? (profile?.memberTier.isNotEmpty == true && profile?.memberTier != 'Member' && profile?.memberTier != 'New Member' ? profile!.memberTier : 'Super Admin') : (profile?.memberTier ?? 'Member');
 
         _currentUser = profile?.copyWith(role: resolvedRole, memberTier: resolvedTier) ?? UserModel(
           id: user.id,
@@ -259,7 +259,7 @@ class AuthManager extends ChangeNotifier {
       final isOwner = UserModel.isSuperAdminEmail(authUser.email ?? _currentUser?.email);
       if (profile != null) {
         if (isOwner || profile.role == UserRole.admin) {
-          _currentUser = profile.copyWith(role: UserRole.admin, memberTier: profile.memberTier == 'New Member' ? 'Super Admin' : profile.memberTier);
+          _currentUser = profile.copyWith(role: UserRole.admin, memberTier: (profile.memberTier == 'New Member' || profile.memberTier == 'Member') ? 'Super Admin' : profile.memberTier);
         } else {
           _currentUser = profile;
         }

@@ -22,109 +22,129 @@ class _AdminConsumerTabState extends State<AdminConsumerTab> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Pastikan data konsumen selalu termuat saat tab dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (AdminManager.instance.consumers.isEmpty) {
+        AdminManager.instance.loadAllData();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final admin = AdminManager.instance;
-    final allConsumers = admin.consumers;
+    return ListenableBuilder(
+      listenable: AdminManager.instance,
+      builder: (context, _) {
+        final admin = AdminManager.instance;
+        final allConsumers = admin.consumers;
 
-    final filtered = allConsumers.where((c) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return c.name.toLowerCase().contains(q) ||
-          c.email.toLowerCase().contains(q) ||
-          c.phone.contains(q);
-    }).toList();
+        final filtered = allConsumers.where((c) {
+          if (_searchQuery.isEmpty) return true;
+          final q = _searchQuery.toLowerCase();
+          return c.name.toLowerCase().contains(q) ||
+              c.email.toLowerCase().contains(q) ||
+              c.phone.contains(q);
+        }).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Top Summary Cards
-        Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: _buildSummaryCard(
-                icon: Icons.people_alt,
-                color: const Color(0xFF2E7D32),
-                label: 'Total Konsumen',
-                value: '${allConsumers.length} Pengguna',
+            // Top Summary Cards
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    icon: Icons.people_alt,
+                    color: const Color(0xFF2E7D32),
+                    label: 'Total Konsumen',
+                    value: '${allConsumers.length} Pengguna',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    icon: Icons.verified_user_rounded,
+                    color: const Color(0xFFE65100),
+                    label: 'Status Keanggotaan',
+                    value: 'Member Seuma',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    icon: Icons.security,
+                    color: const Color(0xFF1565C0),
+                    label: 'Enkripsi Data',
+                    value: '100% E2EE Aktif',
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Search Bar
+            TextField(
+              controller: _searchCtrl,
+              onChanged: (val) => setState(() => _searchQuery = val.trim()),
+              decoration: InputDecoration(
+                hintText: 'Cari nama konsumen, email, atau no. WhatsApp...',
+                prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textMuted),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+
+            const SizedBox(height: 16),
+
+            // Consumer List
             Expanded(
-              child: _buildSummaryCard(
-                icon: Icons.stars,
-                color: const Color(0xFFE65100),
-                label: 'Member Prioritas',
-                value: '${allConsumers.where((c) => c.memberTier.contains('Gold')).length} Gold',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildSummaryCard(
-                icon: Icons.security,
-                color: const Color(0xFF1565C0),
-                label: 'Enkripsi Data',
-                value: '100% E2EE Aktif',
-              ),
+              child: admin.isLoading && allConsumers.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.espresso),
+                    )
+                  : filtered.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.search_off, size: 48, color: Colors.grey.shade400),
+                              const SizedBox(height: 8),
+                              Text(
+                                _searchQuery.isEmpty ? 'Belum ada konsumen terdaftar.' : 'Konsumen tidak ditemukan.',
+                                style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final consumer = filtered[index];
+                            return _buildConsumerCard(context, consumer);
+                          },
+                        ),
             ),
           ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Search Bar
-        TextField(
-          controller: _searchCtrl,
-          onChanged: (val) => setState(() => _searchQuery = val.trim()),
-          decoration: InputDecoration(
-            hintText: 'Cari nama konsumen, email, atau no. WhatsApp...',
-            prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textMuted),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 18),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Consumer List
-        Expanded(
-          child: filtered.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search_off, size: 48, color: Colors.grey.shade400),
-                      const SizedBox(height: 8),
-                      Text(
-                        _searchQuery.isEmpty ? 'Belum ada konsumen terdaftar.' : 'Konsumen tidak ditemukan.',
-                        style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.separated(
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final consumer = filtered[index];
-                    return _buildConsumerCard(context, consumer);
-                  },
-                ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -209,18 +229,16 @@ class _AdminConsumerTabState extends State<AdminConsumerTab> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: consumer.memberTier.contains('Gold') ? const Color(0xFFFFF8E1) : const Color(0xFFECEFF1),
+                        color: const Color(0xFFECEFF1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: consumer.memberTier.contains('Gold') ? const Color(0xFFFFB300) : const Color(0xFFB0BEC5),
-                        ),
+                        border: Border.all(color: const Color(0xFFB0BEC5)),
                       ),
-                      child: Text(
-                        consumer.memberTier,
+                      child: const Text(
+                        'Member',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: consumer.memberTier.contains('Gold') ? const Color(0xFFF57F17) : const Color(0xFF455A64),
+                          color: Color(0xFF455A64),
                         ),
                       ),
                     ),

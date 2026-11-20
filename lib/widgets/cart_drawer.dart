@@ -288,62 +288,6 @@ class _CartDrawerState extends State<CartDrawer> {
                 ),
                 child: Column(
                   children: [
-                    // Voucher Input
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _voucherController,
-                            textCapitalization: TextCapitalization.characters,
-                            decoration: InputDecoration(
-                              hintText: 'Kode Voucher (cth: SEUMAFIRST)',
-                              hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: AppColors.caramel),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (_voucherController.text.isNotEmpty) {
-                              final success = cart.applyVoucher(_voucherController.text);
-                              if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Voucher berhasil digunakan!')),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Kode voucher tidak valid.')),
-                                );
-                              }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.espresso,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Terapkan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
-
                     // Price Breakdown
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
