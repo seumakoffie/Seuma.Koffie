@@ -6,6 +6,7 @@ import '../state/auth_state.dart';
 import '../state/cart_state.dart';
 import '../theme/app_theme.dart';
 import 'common/fraud_warning_box.dart';
+import 'customer/customer_order_history_dialog.dart';
 
 class CheckoutDialog extends StatefulWidget {
   const CheckoutDialog({super.key});
@@ -41,6 +42,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
   final TextEditingController _addressController = TextEditingController();
   String _selectedPayment = 'cod'; // Default: Bayar di Tempat (COD)
   bool _isSuccess = false;
+  bool _isSubmitting = false;
   late String _orderNumber;
   late String _orderUuid;
 
@@ -474,7 +476,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                       Expanded(
                         flex: 2,
                         child: ElevatedButton(
-                          onPressed: () async {
+                          onPressed: _isSubmitting ? null : () async {
                             if (_step == 1) {
                               if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -491,6 +493,9 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                               setState(() => _step = 2);
                             } else {
                               // Simpan Pesanan Transaksional ke Supabase & Realtime Broadcast
+                              setState(() { _isSubmitting = true; });
+                              // Simpan messenger reference SEBELUM async gap untuk hindari use_build_context_synchronously
+                              final messenger = ScaffoldMessenger.of(context);
                               final cart = CartManager.instance;
                               final mapsUrl = _isDelivery
                                   ? 'https://www.google.com/maps?q=$_deliveryLat,$_deliveryLng'
@@ -527,10 +532,33 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                                 )).toList(),
                               );
 
-                              // Kirim ke Admin Manager & Supabase
-                              await AdminManager.instance.placeNewCustomerOrder(newOrder);
-
-                              setState(() => _isSuccess = true);
+                              // Kirim ke Admin Manager & Supabase — cek hasil sungguhan
+                              final success = await AdminManager.instance.placeNewCustomerOrder(newOrder);
+                              if (!mounted) return;
+                              if (success) {
+                                setState(() { _isSuccess = true; _isSubmitting = false; });
+                              } else {
+                                final errMsg = AdminManager.instance.lastOrderError ?? 'Pesanan gagal disimpan. Periksa koneksi internet & coba lagi.';
+                                setState(() { _isSubmitting = false; });
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                                        const SizedBox(width: 10),
+                                        Expanded(child: Text('Gagal: $errMsg', style: const TextStyle(fontSize: 12.5))),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.red.shade700,
+                                    duration: const Duration(seconds: 6),
+                                    action: SnackBarAction(
+                                      label: 'Coba Lagi',
+                                      textColor: Colors.white,
+                                      onPressed: () {},
+                                    ),
+                                  ),
+                                );
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -540,10 +568,15 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          child: Text(
-                            _step == 1 ? 'Lanjut Pembayaran' : 'Konfirmasi & Pesan Sekarang',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20, height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                                )
+                              : Text(
+                                  _step == 1 ? 'Lanjut Pembayaran' : 'Konfirmasi & Pesan Sekarang',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                                ),
                         ),
                       ),
                     ],
@@ -759,6 +792,27 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
         ),
 
         const SizedBox(height: 18),
+
+        // Tombol Lacak Pesanan
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              CartManager.instance.clear();
+              Navigator.of(context).pop();
+              CustomerOrderHistoryDialog.show(context);
+            },
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppColors.caramel.withValues(alpha: 0.5)),
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.delivery_dining_rounded, size: 17, color: AppColors.caramel),
+            label: const Text('Lacak Pesanan Saya', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.caramel)),
+          ),
+        ),
+
+        const SizedBox(height: 10),
 
         SizedBox(
           width: double.infinity,

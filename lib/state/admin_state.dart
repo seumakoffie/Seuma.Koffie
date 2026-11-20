@@ -14,6 +14,9 @@ class AdminManager extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  String? _lastOrderError;
+  String? get lastOrderError => _lastOrderError;
+
   List<UserModel> _consumers = [];
   List<UserModel> get consumers => _consumers;
 
@@ -65,11 +68,9 @@ class AdminManager extends ChangeNotifier {
   void startRealtimeOrdersListener() {
     _ordersSubscription?.cancel();
     _ordersSubscription = SeumaSupabaseService.instance.ordersStream.listen((liveOrders) {
-      if (liveOrders.isNotEmpty) {
-        _orders = liveOrders;
-        _isRealtimeConnected = true;
-        notifyListeners();
-      }
+      _orders = liveOrders;
+      _isRealtimeConnected = true;
+      notifyListeners();
     });
   }
 
@@ -158,9 +159,12 @@ class AdminManager extends ChangeNotifier {
   }
 
   Future<bool> placeNewCustomerOrder(OrderModel order) async {
+    _lastOrderError = null;
     final success = await SeumaSupabaseService.instance.placeCustomerOrder(order);
     if (success) {
       await loadAllData();
+    } else {
+      _lastOrderError = SeumaSupabaseService.instance.lastOrderError;
     }
     return success;
   }

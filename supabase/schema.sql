@@ -650,11 +650,13 @@ CREATE TABLE IF NOT EXISTS public.menu_items (
 ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
 
 -- Semua pengguna (anon & authenticated) dapat melihat menu
+DROP POLICY IF EXISTS "Public Read Menu Items" ON public.menu_items;
 CREATE POLICY "Public Read Menu Items"
     ON public.menu_items FOR SELECT
     USING (true);
 
 -- Hanya Super Admin & Admin yang dapat memodifikasi (Insert, Update, Delete)
+DROP POLICY IF EXISTS "Admin All Menu Items" ON public.menu_items;
 CREATE POLICY "Admin All Menu Items"
     ON public.menu_items FOR ALL
     USING (

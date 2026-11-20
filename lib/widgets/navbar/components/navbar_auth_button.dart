@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../state/auth_state.dart';
 import '../../admin/admin_dashboard_dialog.dart';
+import '../../customer/customer_order_history_dialog.dart';
 
 class NavbarAuthButton extends StatelessWidget {
   final VoidCallback onShowAuth;
@@ -38,6 +39,8 @@ class NavbarAuthButton extends StatelessWidget {
                       ),
                     );
                   }
+                } else if (val == 'my_orders') {
+                  CustomerOrderHistoryDialog.show(context);
                 } else if (val == 'admin_portal') {
                   AdminDashboardDialog.show(context);
                 } else if (val == 'logout') {
@@ -89,6 +92,17 @@ class NavbarAuthButton extends StatelessWidget {
                     ),
                   ),
                 ],
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'my_orders',
+                  child: Row(
+                    children: [
+                      Icon(Icons.receipt_long_rounded, size: 16, color: AppColors.caramel),
+                      SizedBox(width: 8),
+                      Text('Pesanan Saya', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
                 const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'refresh_profile',

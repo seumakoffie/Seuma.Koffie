@@ -22,6 +22,13 @@ class SeumaSupabaseService {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
+  static final RegExp _uuidRegex = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+
+  String? _lastOrderError;
+  String? get lastOrderError => _lastOrderError;
+
   final StreamController<List<OrderModel>> _ordersStreamController =
       StreamController<List<OrderModel>>.broadcast();
 
@@ -323,34 +330,95 @@ class SeumaSupabaseService {
   }
 
   Future<bool> placeCustomerOrder(OrderModel order) async {
-    if (client == null) return false;
+    _lastOrderError = null;
+    if (client == null) {
+      _lastOrderError = 'Koneksi Supabase belum terinisialisasi.';
+      return false;
+    }
     try {
       final orderData = order.toJson();
       // Pastikan format ID adalah UUID valid untuk PostgreSQL
-      final validOrderId = (order.id.length >= 32 && order.id.contains('-')) 
-          ? order.id 
-          : generateUuidV4();
+      final validOrderId = (_uuidRegex.hasMatch(order.id)) ? order.id : generateUuidV4();
       orderData['id'] = validOrderId;
 
-      // Sanitasi user_id jika user belum login atau id tidak valid
-      if (orderData['user_id'] == null || (orderData['user_id'] as String).isEmpty) {
+      // Sanitasi user_id: harus format UUID RFC-4122 dan ada di tabel profiles
+      final rawUserId = orderData['user_id']?.toString().trim();
+      if (rawUserId == null || rawUserId.isEmpty || !_uuidRegex.hasMatch(rawUserId)) {
         orderData.remove('user_id');
+      } else {
+        try {
+          final profileCheck = await client!.from('profiles').select('id').eq('id', rawUserId).maybeSingle();
+          if (profileCheck == null) {
+            orderData.remove('user_id');
+          }
+        } catch (_) {
+          orderData.remove('user_id');
+        }
       }
 
-      await client!.from('orders').insert(orderData);
+      // Bersihkan list items jika ikut terbawa dalam map orderData
+      orderData.remove('items');
 
+      // Defensive Insert dengan fallback otomatis jika kolom belum termigrasi
+      try {
+        await client!.from('orders').insert(orderData);
+      } catch (insertErr) {
+        final errStr = insertErr.toString();
+        debugPrint('First orders insert attempt failed: $errStr');
+        if (errStr.contains('maps_url')) {
+          orderData.remove('maps_url');
+          await client!.from('orders').insert(orderData);
+        } else if (errStr.contains('user_id') || errStr.contains('fkey')) {
+          orderData.remove('user_id');
+          await client!.from('orders').insert(orderData);
+        } else {
+          rethrow;
+        }
+      }
+
+      // Insert item pesanan
       for (final it in order.items) {
         final itData = it.toJson();
-        itData['id'] = (it.id.length >= 32 && it.id.contains('-')) 
-            ? it.id 
-            : generateUuidV4();
+        itData['id'] = (_uuidRegex.hasMatch(it.id)) ? it.id : generateUuidV4();
         itData['order_id'] = validOrderId;
-        await client!.from('order_items').insert(itData);
+        try {
+          await client!.from('order_items').insert(itData);
+        } catch (itErr) {
+          debugPrint('Error inserting order_item: $itErr');
+        }
       }
       return true;
     } catch (e) {
+      _lastOrderError = e.toString();
       debugPrint('Error placeCustomerOrder: $e');
       return false;
+    }
+  }
+
+  Future<List<OrderModel>> fetchOrdersForCustomer({
+    String? userId,
+    String? phone,
+    String? recipientName,
+  }) async {
+    if (client == null) return [];
+    try {
+      var query = client!.from('orders').select('*, order_items(*)');
+      if (userId != null && _uuidRegex.hasMatch(userId)) {
+        query = query.eq('user_id', userId);
+      } else if (phone != null && phone.isNotEmpty) {
+        query = query.eq('recipient_phone', phone);
+      } else if (recipientName != null && recipientName.isNotEmpty) {
+        query = query.ilike('recipient_name', '%$recipientName%');
+      }
+      final res = await query.order('created_at', ascending: false);
+      return (res as List).map((e) {
+        final itemsRaw = (e['order_items'] as List?) ?? [];
+        final items = itemsRaw.map((it) => OrderItemModel.fromJson(it)).toList();
+        return OrderModel.fromJson(e, items: items);
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetchOrdersForCustomer: $e');
+      return [];
     }
   }
 
