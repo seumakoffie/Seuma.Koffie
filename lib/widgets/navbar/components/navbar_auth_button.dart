@@ -40,16 +40,6 @@ class NavbarAuthButton extends StatelessWidget {
                   }
                 } else if (val == 'admin_portal') {
                   AdminDashboardDialog.show(context);
-                } else if (val == 'revoke_other_devices') {
-                  final count = await AuthManager.instance.revokeOtherDeviceSessions();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Berhasil mengeluarkan $count perangkat lain dari akun Anda.'),
-                        backgroundColor: Colors.green.shade700,
-                      ),
-                    );
-                  }
                 } else if (val == 'logout') {
                   AuthManager.instance.logout();
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -99,33 +89,6 @@ class NavbarAuthButton extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (AuthManager.instance.hasMultiDeviceAlert) ...[
-                  const PopupMenuDivider(),
-                  PopupMenuItem(
-                    value: 'revoke_other_devices',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.devices_other_rounded, size: 16, color: Colors.amberAccent),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '⚠️ Terdeteksi ${AuthManager.instance.activeDeviceCount} Perangkat',
-                                style: const TextStyle(color: Colors.amberAccent, fontSize: 11.5, fontWeight: FontWeight.w800),
-                              ),
-                              const Text(
-                                'Klik untuk keluarkan perangkat lain',
-                                style: TextStyle(color: Colors.white70, fontSize: 10),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
                 const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'refresh_profile',
@@ -159,13 +122,8 @@ class NavbarAuthButton extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (AuthManager.instance.hasMultiDeviceAlert) ...[
-                      const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.amberAccent),
-                      const SizedBox(width: 4),
-                    ] else ...[
-                      Icon(user.isAdmin ? Icons.shield_rounded : Icons.account_circle_rounded, size: 16, color: AppColors.gold),
-                      const SizedBox(width: 6),
-                    ],
+                    Icon(user.isAdmin ? Icons.shield_rounded : Icons.account_circle_rounded, size: 16, color: AppColors.gold),
+                    const SizedBox(width: 6),
                     Text(
                       user.name.split(' ').first,
                       style: const TextStyle(

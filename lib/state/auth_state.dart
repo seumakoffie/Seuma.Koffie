@@ -5,11 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../services/supabase_service.dart';
 
-// Fingerprint statis per sesi app — dibuat sekali saat app pertama dibuka
-// Ini cukup untuk mendeteksi tab/browser berbeda dalam satu login session
-final String _sessionDeviceFingerprint =
-    'seuma-web-${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
-
 class AuthManager extends ChangeNotifier {
   static final AuthManager instance = AuthManager._internal();
   AuthManager._internal() {
@@ -20,11 +15,6 @@ class AuthManager extends ChangeNotifier {
   bool _isLoading = false;
   bool _isRememberMe = true;
 
-  // Pelacakan Perangkat & Multi-Device Alert
-  final String _currentDeviceFingerprint = _sessionDeviceFingerprint;
-  List<Map<String, dynamic>> _activeDeviceSessions = [];
-  StreamSubscription<List<Map<String, dynamic>>>? _deviceSessionSub;
-
   // Anti-Brute Force Tracking & Rate Limiting Guard
   int _failedAttempts = 0;
   DateTime? _lockoutUntil;
@@ -34,11 +24,6 @@ class AuthManager extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isRememberMe => _isRememberMe;
   int get failedAttempts => _failedAttempts;
-
-  List<Map<String, dynamic>> get activeDeviceSessions => _activeDeviceSessions;
-  bool get hasMultiDeviceAlert => _activeDeviceSessions.length > 1;
-  int get activeDeviceCount => _activeDeviceSessions.isEmpty ? 1 : _activeDeviceSessions.length;
-  String get currentDeviceFingerprint => _currentDeviceFingerprint;
 
   void setRememberMe(bool val) {
     _isRememberMe = val;
@@ -109,56 +94,10 @@ class AuthManager extends ChangeNotifier {
         );
       }
 
-      // Daftarkan sesi perangkat dan dengarkan status multi-perangkat
-      _initDeviceTracking(userId);
-
       notifyListeners();
     } catch (e) {
       debugPrint('Error _fetchAndSetProfile: $e');
     }
-  }
-
-  void _initDeviceTracking(String userId) {
-    try {
-      final s = SeumaSupabaseService.instance;
-      s.registerDeviceSession(
-        userId: userId,
-        deviceFingerprint: _currentDeviceFingerprint,
-        deviceName: kIsWeb ? 'Web Browser (Perangkat Ini)' : 'Aplikasi Seuma.Koffie',
-      );
-
-      _deviceSessionSub?.cancel();
-      _deviceSessionSub = s.deviceSessionsStream(userId).listen((sessions) {
-        _activeDeviceSessions = sessions;
-        notifyListeners();
-      });
-
-      // Muat awal daftar perangkat aktif
-      s.getActiveDeviceSessions(userId).then((list) {
-        if (list.isNotEmpty) {
-          _activeDeviceSessions = list;
-          notifyListeners();
-        }
-      });
-    } catch (e) {
-      debugPrint('Error initDeviceTracking: $e');
-    }
-  }
-
-  Future<bool> revokeOtherDeviceSessions() async {
-    final user = _currentUser;
-    if (user == null) return false;
-    final success = await SeumaSupabaseService.instance.revokeOtherDeviceSessions(
-      userId: user.id,
-      currentFingerprint: _currentDeviceFingerprint,
-    );
-    if (success) {
-      _activeDeviceSessions = _activeDeviceSessions
-          .where((s) => s['device_fingerprint'] == _currentDeviceFingerprint)
-          .toList();
-      notifyListeners();
-    }
-    return success;
   }
 
   /// Reset Password menggunakan On-Screen OTP tanpa perlu email
@@ -236,9 +175,9 @@ class AuthManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// LOGIN NYATA KE SUPABASE AUTH (Mengembalikan null jika sukses, atau pesan error jika gagal)
+  /// LOGIN NYATA KE SUPABASE AUTH
   Future<String?> login({
-    required String identifier, // email
+    required String identifier,
     required String password,
   }) async {
     if (isLockedOut) {
@@ -256,14 +195,10 @@ class AuthManager extends ChangeNotifier {
 
       final user = res.user;
       if (user != null) {
-        // Reset brute force
         _failedAttempts = 0;
         _lockoutUntil = null;
 
-        // Ambil profil nyata dari database profiles
         UserModel? profile = await SeumaSupabaseService.instance.getProfile(user.id, email: user.email);
-        
-        // Jika profil belum terambil sesaat setelah trigger
         if (profile == null) {
           await Future.delayed(const Duration(milliseconds: 400));
           profile = await SeumaSupabaseService.instance.getProfile(user.id, email: user.email);
@@ -284,7 +219,7 @@ class AuthManager extends ChangeNotifier {
 
         _isLoading = false;
         notifyListeners();
-        return null; // Sukses
+        return null;
       } else {
         recordFailedAttempt();
         _isLoading = false;
@@ -304,7 +239,7 @@ class AuthManager extends ChangeNotifier {
     }
   }
 
-  /// REGISTRASI NYATA KE SUPABASE AUTH (Mengembalikan null jika sukses, atau pesan error jika gagal)
+  /// REGISTRASI NYATA KE SUPABASE AUTH
   Future<String?> register({
     required String name,
     required String email,
@@ -324,11 +259,8 @@ class AuthManager extends ChangeNotifier {
 
       final user = res.user;
       if (user != null) {
-        // Berikan waktu sejenak agar trigger on_auth_user_created selesai membuat profil
         await Future.delayed(const Duration(milliseconds: 500));
-        
         UserModel? profile = await SeumaSupabaseService.instance.getProfile(user.id);
-        
         _currentUser = profile ?? UserModel(
           id: user.id,
           name: name.trim(),
@@ -336,10 +268,9 @@ class AuthManager extends ChangeNotifier {
           phone: phone.trim(),
           role: UserRole.customer,
         );
-
         _isLoading = false;
         notifyListeners();
-        return null; // Sukses
+        return null;
       } else {
         _isLoading = false;
         notifyListeners();
@@ -356,7 +287,7 @@ class AuthManager extends ChangeNotifier {
     }
   }
 
-  /// Refresh profil dari Supabase (berguna setelah admin mengubah role user)
+  /// Refresh profil dari Supabase
   Future<void> refreshProfile() async {
     final authUser = SeumaSupabaseService.instance.currentAuthUser;
     if (authUser == null) return;
@@ -388,8 +319,6 @@ class AuthManager extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    _deviceSessionSub?.cancel();
-    _activeDeviceSessions.clear();
     await SeumaSupabaseService.instance.signOut();
     _currentUser = null;
     notifyListeners();
