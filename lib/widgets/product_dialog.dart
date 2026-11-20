@@ -366,67 +366,70 @@ class _ProductDialogState extends State<ProductDialog> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                CartManager.instance.addItem(
-                  menuItemId: item.id,
-                  name: item.name,
-                  category: item.category,
-                  isHot: _isHot,
-                  extraShot: _addShot,
-                  unitPrice: _calculatedUnitPrice,
-                  quantity: _quantity,
-                  iconEmoji: item.iconEmoji,
-                );
+              onPressed: !item.isAvailable
+                  ? null
+                  : () {
+                      CartManager.instance.addItem(
+                        menuItemId: item.id,
+                        name: item.name,
+                        category: item.category,
+                        isHot: _isHot,
+                        extraShot: _addShot,
+                        unitPrice: _calculatedUnitPrice,
+                        quantity: _quantity,
+                        iconEmoji: item.iconEmoji,
+                      );
 
-                Navigator.of(context).pop();
+                      Navigator.of(context).pop();
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppColors.espresso,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    content: Row(
-                      children: [
-                        Text(item.iconEmoji, style: const TextStyle(fontSize: 20)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            '$_quantity x ${item.name} berhasil ditambah!',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppColors.espresso,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          content: Row(
+                            children: [
+                              Text(item.iconEmoji, style: const TextStyle(fontSize: 20)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '$_quantity x ${item.name} berhasil ditambah!',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                      );
+                    },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.caramel,
+                backgroundColor: !item.isAvailable ? Colors.grey.shade400 : AppColors.caramel,
                 foregroundColor: Colors.white,
-                elevation: 4,
+                elevation: !item.isAvailable ? 0 : 4,
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.shopping_bag_outlined, size: 20),
-                      SizedBox(width: 10),
+                      Icon(!item.isAvailable ? Icons.block_rounded : Icons.shopping_bag_outlined, size: 20),
+                      const SizedBox(width: 10),
                       Text(
-                        'Tambah ke Keranjang',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                        !item.isAvailable ? 'Menu Sedang Habis' : 'Tambah ke Keranjang',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
                       ),
                     ],
                   ),
-                  Text(
-                    formatRupiah(_totalPrice),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
-                  ),
+                  if (item.isAvailable)
+                    Text(
+                      formatRupiah(_totalPrice),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                    ),
                 ],
               ),
             ),

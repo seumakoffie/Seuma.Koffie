@@ -14,6 +14,7 @@ class MenuItem {
   final TempOption tempOption;
   final bool isBestSeller;
   final bool isNew;
+  final bool isAvailable;
   final String iconEmoji;
   final String? imagePath;
 
@@ -29,9 +30,87 @@ class MenuItem {
     required this.tempOption,
     this.isBestSeller = false,
     this.isNew = false,
+    this.isAvailable = true,
     required this.iconEmoji,
     this.imagePath,
   });
+
+  MenuItem copyWith({
+    String? id,
+    String? name,
+    int? priceHot,
+    int? priceIce,
+    int? priceFixed,
+    String? category,
+    String? categorySlug,
+    String? description,
+    TempOption? tempOption,
+    bool? isBestSeller,
+    bool? isNew,
+    bool? isAvailable,
+    String? iconEmoji,
+    String? imagePath,
+  }) {
+    return MenuItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      priceHot: priceHot ?? this.priceHot,
+      priceIce: priceIce ?? this.priceIce,
+      priceFixed: priceFixed ?? this.priceFixed,
+      category: category ?? this.category,
+      categorySlug: categorySlug ?? this.categorySlug,
+      description: description ?? this.description,
+      tempOption: tempOption ?? this.tempOption,
+      isBestSeller: isBestSeller ?? this.isBestSeller,
+      isNew: isNew ?? this.isNew,
+      isAvailable: isAvailable ?? this.isAvailable,
+      iconEmoji: iconEmoji ?? this.iconEmoji,
+      imagePath: imagePath ?? this.imagePath,
+    );
+  }
+
+  factory MenuItem.fromJson(Map<String, dynamic> json) {
+    TempOption opt = TempOption.both;
+    final tempStr = json['temp_option']?.toString();
+    if (tempStr == 'hotOnly') opt = TempOption.hotOnly;
+    if (tempStr == 'iceOnly') opt = TempOption.iceOnly;
+
+    return MenuItem(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      priceHot: json['price_hot'] is int ? json['price_hot'] : int.tryParse(json['price_hot']?.toString() ?? ''),
+      priceIce: json['price_ice'] is int ? json['price_ice'] : int.tryParse(json['price_ice']?.toString() ?? ''),
+      priceFixed: json['price_fixed'] is int ? json['price_fixed'] : int.tryParse(json['price_fixed']?.toString() ?? ''),
+      category: json['category']?.toString() ?? '',
+      categorySlug: json['category_slug']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      tempOption: opt,
+      isBestSeller: json['is_best_seller'] == true,
+      isNew: json['is_new'] == true,
+      isAvailable: json['is_available'] != false, // Default to true if null
+      iconEmoji: json['icon_emoji']?.toString() ?? '☕',
+      imagePath: json['image_path']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price_hot': priceHot,
+      'price_ice': priceIce,
+      'price_fixed': priceFixed,
+      'category': category,
+      'category_slug': categorySlug,
+      'description': description,
+      'temp_option': tempOption.name,
+      'is_best_seller': isBestSeller,
+      'is_new': isNew,
+      'is_available': isAvailable,
+      'icon_emoji': iconEmoji,
+      'image_path': imagePath,
+    };
+  }
 
   String? get resolvedImagePath {
     if (imagePath != null && imagePath!.isNotEmpty) return imagePath;

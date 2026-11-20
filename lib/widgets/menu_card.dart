@@ -372,10 +372,14 @@ class _MenuCardState extends State<MenuCard> {
                           width: 34,
                           height: 34,
                           decoration: BoxDecoration(
-                            gradient: _isHovered ? AppColors.caramelGradient : null,
-                            color: _isHovered ? null : themeColor.withValues(alpha: 0.14),
+                            gradient: !item.isAvailable
+                                ? null
+                                : (_isHovered ? AppColors.caramelGradient : null),
+                            color: !item.isAvailable
+                                ? Colors.grey.shade300
+                                : (_isHovered ? null : themeColor.withValues(alpha: 0.14)),
                             shape: BoxShape.circle,
-                            boxShadow: _isHovered
+                            boxShadow: item.isAvailable && _isHovered
                                 ? [
                                     BoxShadow(
                                       color: AppColors.caramel.withValues(alpha: 0.45),
@@ -386,9 +390,11 @@ class _MenuCardState extends State<MenuCard> {
                                 : null,
                           ),
                           child: Icon(
-                            Icons.add_shopping_cart_rounded,
+                            !item.isAvailable ? Icons.block_rounded : Icons.add_shopping_cart_rounded,
                             size: 16,
-                            color: _isHovered ? Colors.white : themeColor,
+                            color: !item.isAvailable
+                                ? Colors.grey.shade600
+                                : (_isHovered ? Colors.white : themeColor),
                           ),
                         ),
                       ],
@@ -419,7 +425,32 @@ class _MenuCardState extends State<MenuCard> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (item.isBestSeller)
+                if (!item.isAvailable)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    margin: const EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade700,
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withValues(alpha: 0.4),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'HABIS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                if (item.isBestSeller && item.isAvailable)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     margin: const EdgeInsets.only(bottom: 4),

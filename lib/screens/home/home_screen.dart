@@ -12,6 +12,7 @@ import '../../widgets/cart_drawer.dart';
 import '../../widgets/auth_dialog.dart';
 import '../../widgets/auth/welcome_order_prompt_dialog.dart';
 import '../../state/auth_state.dart';
+import '../../state/menu_state.dart';
 import '../../widgets/story_and_quiz_section.dart';
 import '../../widgets/customer/live_order_tracker_banner.dart';
 import 'widgets/notification_strip.dart';
@@ -54,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<MenuItem> get _filteredMenuItems {
-    return kMenuItems.where((item) {
+    return MenuManager.instance.items.where((item) {
       final matchesCategory = _selectedCategorySlug == 'all' || item.categorySlug == _selectedCategorySlug;
       final q = _searchQuery.toLowerCase().trim();
       final matchesSearch = q.isEmpty ||
@@ -97,73 +98,78 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         children: [
           // ── MAIN SCROLL VIEW ─────────────────────────────────────────────
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              // Top Notification Strip
-              const SliverToBoxAdapter(
-                child: NotificationStrip(),
-              ),
+          ListenableBuilder(
+            listenable: MenuManager.instance,
+            builder: (context, _) {
+              return CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  // Top Notification Strip
+                  const SliverToBoxAdapter(
+                    child: NotificationStrip(),
+                  ),
 
-              // Spacer for overlaid navbar (64px)
-              const SliverToBoxAdapter(child: SizedBox(height: 64)),
+                  // Spacer for overlaid navbar (64px)
+                  const SliverToBoxAdapter(child: SizedBox(height: 64)),
 
-              // Hero Sanger Cup Section
-              SliverToBoxAdapter(
-                child: SplitHeroSection(
-                  onOrderNow: () => _scrollToKey(_menuSectionKey),
-                  onExploreMenu: () => _scrollToKey(_menuSectionKey),
-                ),
-              ),
+                  // Hero Sanger Cup Section
+                  SliverToBoxAdapter(
+                    child: SplitHeroSection(
+                      onOrderNow: () => _scrollToKey(_menuSectionKey),
+                      onExploreMenu: () => _scrollToKey(_menuSectionKey),
+                    ),
+                  ),
 
-              // Instagram/Shopee Category Story Bubbles
-              SliverToBoxAdapter(
-                child: CategoryStoryBubbles(
-                  selectedSlug: _selectedCategorySlug,
-                  onSelectCategory: (slug) {
-                    setState(() => _selectedCategorySlug = slug);
-                    _scrollToKey(_menuSectionKey);
-                  },
-                ),
-              ),
+                  // Instagram/Shopee Category Story Bubbles
+                  SliverToBoxAdapter(
+                    child: CategoryStoryBubbles(
+                      selectedSlug: _selectedCategorySlug,
+                      onSelectCategory: (slug) {
+                        setState(() => _selectedCategorySlug = slug);
+                        _scrollToKey(_menuSectionKey);
+                      },
+                    ),
+                  ),
 
-              // Interactive Taste Quiz Section
-              const SliverToBoxAdapter(
-                child: StoryAndQuizSection(),
-              ),
+                  // Interactive Taste Quiz Section
+                  const SliverToBoxAdapter(
+                    child: StoryAndQuizSection(),
+                  ),
 
-              // Modular Menu Catalog Section (Search, Chips, Grid)
-              SliverToBoxAdapter(
-                child: MenuCatalogSection(
-                  sectionKey: _menuSectionKey,
-                  selectedCategorySlug: _selectedCategorySlug,
-                  searchQuery: _searchQuery,
-                  filteredMenuItems: _filteredMenuItems,
-                  onSelectCategory: (slug) {
-                    setState(() => _selectedCategorySlug = slug);
-                  },
-                  onSearchChanged: (q) {
-                    setState(() => _searchQuery = q);
-                  },
-                ),
-              ),
+                  // Modular Menu Catalog Section (Search, Chips, Grid)
+                  SliverToBoxAdapter(
+                    child: MenuCatalogSection(
+                      sectionKey: _menuSectionKey,
+                      selectedCategorySlug: _selectedCategorySlug,
+                      searchQuery: _searchQuery,
+                      filteredMenuItems: _filteredMenuItems,
+                      onSelectCategory: (slug) {
+                        setState(() => _selectedCategorySlug = slug);
+                      },
+                      onSearchChanged: (q) {
+                        setState(() => _searchQuery = q);
+                      },
+                    ),
+                  ),
 
-              // About Section v3 (Timeline, Stats, Pillars)
-              SliverToBoxAdapter(
-                child: Container(
-                  key: _aboutSectionKey,
-                  child: const AboutSectionV3(),
-                ),
-              ),
+                  // About Section v3 (Timeline, Stats, Pillars)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      key: _aboutSectionKey,
+                      child: const AboutSectionV3(),
+                    ),
+                  ),
 
-              // Corporate Footer v4 (Kredibilitas & Trust Badges)
-              SliverToBoxAdapter(
-                child: Container(
-                  key: _footerSectionKey,
-                  child: const FooterV3(),
-                ),
-              ),
-            ],
+                  // Corporate Footer v4 (Kredibilitas & Trust Badges)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      key: _footerSectionKey,
+                      child: const FooterV3(),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
 
           // ── CORPORATE NAVBAR (Overlaid on top) ───────────────────────────

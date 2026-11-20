@@ -8,6 +8,7 @@ import 'views/admin_consumer_tab.dart';
 import 'views/admin_shift_keeper_tab.dart';
 import 'views/admin_orders_management_tab.dart';
 import 'views/blockchain_audit_view.dart';
+import 'views/admin_menu_management_tab.dart';
 
 class AdminDashboardDialog extends StatefulWidget {
   const AdminDashboardDialog({super.key});
@@ -54,7 +55,7 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         AdminManager.instance.setSelectedTab(_tabController.index);
@@ -262,6 +263,16 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Icon(Icons.restaurant_menu_rounded, size: 18),
+                            SizedBox(width: 6),
+                            Text('Katalog Menu & Harga'),
+                          ],
+                        ),
+                      ),
+                      const Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
                             Icon(Icons.lock_clock_outlined, size: 18),
                             SizedBox(width: 6),
                             Text('Blockchain & E2EE Ledger'),
@@ -286,6 +297,7 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
                             AdminConsumerTab(),
                             AdminShiftKeeperTab(),
                             AdminOrdersManagementTab(),
+                            AdminMenuManagementTab(),
                             BlockchainAuditView(),
                           ],
                         ),

@@ -8,6 +8,7 @@ import '../models/user_model.dart';
 import '../models/order_model.dart';
 import '../models/shift_schedule_model.dart';
 import '../models/blockchain_block_model.dart';
+import '../models/menu_item.dart';
 
 class SeumaSupabaseConfig {
   static const String projectUrl = 'https://hkmghwcidwrriystuyqt.supabase.co';
@@ -471,5 +472,86 @@ class SeumaSupabaseService {
       return true;
     } catch (_) {}
     return false;
+  }
+
+  // ── MENU ITEMS & REALTIME PRICING ──────────────────────────────────────────
+
+  Future<List<MenuItem>> fetchMenuItems() async {
+    if (client == null) return [];
+    try {
+      final res = await client!
+          .from('menu_items')
+          .select()
+          .order('sort_order', ascending: true);
+      final list = res as List<dynamic>;
+      return list.map((item) => MenuItem.fromJson(item as Map<String, dynamic>)).toList();
+    } catch (e) {
+      debugPrint('Error fetchMenuItems: $e');
+      return [];
+    }
+  }
+
+  Future<bool> updateMenuItemPrice({
+    required String id,
+    int? priceHot,
+    int? priceIce,
+    int? priceFixed,
+  }) async {
+    if (client == null) return false;
+    try {
+      final Map<String, dynamic> updates = {
+        'price_hot': priceHot,
+        'price_ice': priceIce,
+        'price_fixed': priceFixed,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+      await client!.from('menu_items').update(updates).eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('Error updateMenuItemPrice: $e');
+      return false;
+    }
+  }
+
+  Future<bool> toggleMenuItemAvailability({
+    required String id,
+    required bool isAvailable,
+  }) async {
+    if (client == null) return false;
+    try {
+      await client!.from('menu_items').update({
+        'is_available': isAvailable,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('Error toggleMenuItemAvailability: $e');
+      return false;
+    }
+  }
+
+  Future<bool> upsertMenuItem(MenuItem item, {int sortOrder = 0}) async {
+    if (client == null) return false;
+    try {
+      final data = item.toJson();
+      data['sort_order'] = sortOrder;
+      data['updated_at'] = DateTime.now().toUtc().toIso8601String();
+      await client!.from('menu_items').upsert(data);
+      return true;
+    } catch (e) {
+      debugPrint('Error upsertMenuItem: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteMenuItem(String id) async {
+    if (client == null) return false;
+    try {
+      await client!.from('menu_items').delete().eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('Error deleteMenuItem: $e');
+      return false;
+    }
   }
 }

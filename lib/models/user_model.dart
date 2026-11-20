@@ -80,6 +80,7 @@ class UserModel {
   }
 
   bool get isAdmin => role == UserRole.admin || isSuperAdminEmail(email);
+  bool get isSuperAdmin => isSuperAdminEmail(email);
   bool get isShift => role == UserRole.shift;
   bool get isCustomer => !isAdmin && !isShift;
   bool get hasStaffAccess => isAdmin || isShift;

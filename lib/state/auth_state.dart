@@ -31,6 +31,7 @@ class AuthManager extends ChangeNotifier {
   }
 
   bool get isAdmin => _currentUser?.isAdmin ?? false;
+  bool get isSuperAdmin => _currentUser?.isSuperAdmin ?? UserModel.isSuperAdminEmail(_currentUser?.email);
   bool get isShift => _currentUser?.isShift ?? false;
   bool get isCustomer => _currentUser?.isCustomer ?? true;
   bool get hasStaffAccess => _currentUser?.hasStaffAccess ?? false;

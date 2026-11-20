@@ -2,6 +2,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/menu_item.dart';
+import '../state/menu_state.dart';
 import '../theme/app_theme.dart';
 import 'product_dialog.dart';
 
@@ -34,12 +35,13 @@ class _StoryAndQuizSectionState extends State<StoryAndQuizSection>
   }
 
   List<MenuItem> get _recommendedItems {
+    final all = MenuManager.instance.items;
     if (_selectedTaste == 'bold') {
-      return kMenuItems.where((i) => i.categorySlug == 'espresso' || i.categorySlug == 'sanger').take(3).toList();
+      return all.where((i) => i.categorySlug == 'espresso' || i.categorySlug == 'sanger').take(3).toList();
     } else if (_selectedTaste == 'fruity') {
-      return kMenuItems.where((i) => i.categorySlug == 'squash' || i.name.contains('Peach') || i.name.contains('Lemon')).take(3).toList();
+      return all.where((i) => i.categorySlug == 'squash' || i.name.contains('Peach') || i.name.contains('Lemon')).take(3).toList();
     } else {
-      return kMenuItems.where((i) => i.categorySlug == 'susu' || i.categorySlug == 'latte' || i.categorySlug == 'matcha').take(3).toList();
+      return all.where((i) => i.categorySlug == 'susu' || i.categorySlug == 'latte' || i.categorySlug == 'matcha').take(3).toList();
     }
   }
 

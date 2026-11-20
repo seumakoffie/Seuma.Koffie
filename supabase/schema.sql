@@ -634,5 +634,106 @@ $$ LANGUAGE plpgsql;
 GRANT EXECUTE ON FUNCTION public.revoke_other_device_sessions(UUID, TEXT) TO anon, authenticated, service_role;
 
 -- ============================================================================
+-- 13. TABEL KATALOG MENU & HARGA (REALTIME CRUD SUPER ADMIN)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.menu_items (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    category_slug TEXT NOT NULL,
+    description TEXT NOT NULL,
+    price_hot INT,
+    price_ice INT,
+    price_fixed INT,
+    temp_option TEXT NOT NULL DEFAULT 'both',
+    is_best_seller BOOLEAN NOT NULL DEFAULT FALSE,
+    is_new BOOLEAN NOT NULL DEFAULT FALSE,
+    is_available BOOLEAN NOT NULL DEFAULT TRUE,
+    icon_emoji TEXT NOT NULL DEFAULT '☕',
+    image_path TEXT,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Row Level Security (RLS)
+ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
+
+-- Semua pengguna (anon & authenticated) dapat melihat menu
+CREATE POLICY "Public Read Menu Items"
+    ON public.menu_items FOR SELECT
+    USING (true);
+
+-- Hanya Super Admin & Admin yang dapat memodifikasi (Insert, Update, Delete)
+CREATE POLICY "Admin All Menu Items"
+    ON public.menu_items FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE profiles.id = auth.uid()
+            AND (profiles.role = 'admin' OR profiles.email IN ('zarqud@gmail.com', 'seumakoffie20@gmail.com'))
+        )
+    );
+
+-- Aktifkan Realtime Publication pada Tabel menu_items
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.menu_items;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Seeding Data 30 Menu Awal Seuma.Koffie
+INSERT INTO public.menu_items (id, name, category, category_slug, description, price_hot, price_ice, price_fixed, temp_option, is_best_seller, is_new, icon_emoji, sort_order)
+VALUES
+('esp-1', 'Espresso', 'Espresso', 'espresso', 'Single shot espresso murni dari biji kopi sangrai terbaik, pekat dan kaya crema.', 10000, null, null, 'hotOnly', true, false, '☕', 1),
+('ame-1', 'Americano', 'Kopi Americano', 'americano', 'Espresso diencerkan dengan air panas/dingin, rasa bersih dengan aftertaste manis.', 10000, 12000, null, 'both', true, false, '🫖', 2),
+('ame-2', 'Peach Americano', 'Kopi Americano', 'americano', 'Sensasi asam manis buah peach segar berpadu sempurna dengan dinginnya espresso.', null, 15000, null, 'iceOnly', false, true, '🍑', 3),
+('ame-3', 'Lemon Americano', 'Kopi Americano', 'americano', 'Perasan jeruk lemon segar menyatu dengan espresso dingin, sangat membangkitkan stamina.', null, 15000, null, 'iceOnly', false, false, '🍋', 4),
+('ame-4', 'Orange Americano', 'Kopi Americano', 'americano', 'Kombinasi eksotis sari jeruk orange tropis dan double shot espresso chilled.', null, 15000, null, 'iceOnly', false, false, '🍊', 5),
+('san-1', 'Sanger Espresso', 'Kopi Sanger', 'sanger', 'Kopi khas Aceh legendaris! Racikan espresso pekat dengan susu kental manis proporsi pas.', 12000, 14000, null, 'both', true, false, '🥛', 6),
+('san-2', 'Sanger Tegur', 'Kopi Sanger', 'sanger', 'Varian Sanger dengan body ekstra mantap dan aroma biji sangrai lebih pekat menggoda.', 14000, 16000, null, 'both', false, false, '⚡', 7),
+('sus-1', 'Kopi Susu Aren', 'Kopi Susu', 'susu', 'Espresso berpadu susu segar dan gula aren alami murni, manis legit tanpa enek.', 15000, 17000, null, 'both', true, false, '🌴', 8),
+('sus-2', 'Kopi Susu Creamy', 'Kopi Susu', 'susu', 'Tekstur super lembut dan gurih berkat racikan double cream rahasia Seuma.', 16000, 18000, null, 'both', false, false, '🍦', 9),
+('sus-3', 'Kopi Susu Caramel', 'Kopi Susu', 'susu', 'Sentuhan sirup karamel bakar Prancis beraroma toasty yang lumer di lidah.', 17000, 19000, null, 'both', false, false, '🍮', 10),
+('sus-4', 'Kopi Susu Hazelnut', 'Kopi Susu', 'susu', 'Aroma kacang hazelnut panggang berpadu elegan dengan kopi susu dingin.', 17000, 19000, null, 'both', false, false, '🌰', 11),
+('sus-5', 'Kopi Susu Pandan', 'Kopi Susu', 'susu', 'Harum ekstrak daun pandan wangi asli berpadu lembut dengan susu kopi.', 16000, 18000, null, 'both', false, false, '🍃', 12),
+('sus-6', 'Kopi Susu Butterscotch', 'Kopi Susu', 'susu', 'Gurih manisnya butterscotch butter brown sugar yang memanjakan pecinta kopi manis.', 17000, 19000, null, 'both', false, false, '🧈', 13),
+('lat-1', 'Coffee Latte', 'Kopi Latte', 'latte', 'Espresso klasik dengan steamed milk lembut dan lapisan microfoam tipis.', 15000, 17000, null, 'both', false, false, '☕', 14),
+('lat-2', 'Spanish Latte', 'Kopi Latte', 'latte', 'Latte manis lembut khas Spanyol dengan campuran susu kondensasi gurih.', 16000, 18000, null, 'both', false, false, '🇪🇸', 15),
+('lat-3', 'Seasalt Caramel Latte', 'Kopi Latte', 'latte', 'Foam gurih asin seasalt berpadu kontras dengan manis karamel dan kopi.', null, 20000, null, 'iceOnly', false, true, '🧂', 16),
+('lat-4', 'Seasalt Butterscotch Latte', 'Kopi Latte', 'latte', 'Sentuhan foam seasalt gurih di atas butterscotch latte dingin aromatik.', null, 20000, null, 'iceOnly', false, true, '🧈', 17),
+('non-1', 'Chocolate Latte', 'Non Coffee', 'latte', 'Cokelat Belgia pekat berpadu susu segar murni, rasa manis pahit seimbang.', 15000, 17000, null, 'both', false, false, '🍫', 18),
+('non-2', 'Taro Latte', 'Non Coffee', 'taro', 'Ubi taro ungu lembut beraroma vanilla manis yang creamy dan menenangkan.', 15000, 17000, null, 'both', false, false, '🍠', 19),
+('non-3', 'Red Velvet Latte', 'Non Coffee', 'velvet', 'Kue red velvet dalam cangkir! Kaya rasa cokelat dan buttermilk gurih.', 15000, 17000, null, 'both', false, false, '🍰', 20),
+('non-4', 'Kopi Coklat', 'Kopi Fusion', 'latte', 'Mocha fusion perpaduan espresso mantap dan lelehan cokelat premium.', 16000, 18000, null, 'both', false, false, '☕🍫', 21),
+('non-5', 'Kopi Taro', 'Kopi Fusion', 'taro', 'Eksperimen rasa unik: gurih legitnya taro ungu berpadu espresso pekat.', 16000, 18000, null, 'both', false, false, '☕🍠', 22),
+('non-6', 'Kopi Red Velvet', 'Kopi Fusion', 'velvet', 'Perkawinan rasa red velvet lembut dan kehangatan espresso berkualitas.', 16000, 18000, null, 'both', false, false, '☕🍰', 23),
+('mat-1', 'Matcha Original', 'Matcha', 'matcha', 'Matcha murni Uji Jepang berkualitas tinggi, rasa umami lembut menenangkan.', 16000, 18000, null, 'both', true, false, '🍵', 24),
+('mat-2', 'Matcha Strawberry', 'Matcha', 'matcha', 'Layering visual estetik selai stroberi manis di dasar dan matcha latte di atasnya.', null, 20000, null, 'iceOnly', false, true, '🍓', 25),
+('mat-3', 'Matcha Ube', 'Matcha', 'matcha', 'Perpaduan earthy matcha Jepang dan gurihnya ube ungu, cita rasa eksklusif.', null, 20000, null, 'iceOnly', false, false, '🍠', 26),
+('squ-1', 'Orange Squash', 'Squash', 'squash', 'Kesegaran bulir jeruk dengan soda berkarbonasi dingin pelepas dahaga.', null, 13000, null, 'iceOnly', false, false, '🍊', 27),
+('squ-2', 'Lemon Squash', 'Squash', 'squash', 'Asam segar jeruk lemon asli berpadu soda dingin menusuk tenggorokan.', null, 13000, null, 'iceOnly', false, false, '🍋', 28),
+('squ-3', 'Strawberry Squash', 'Squash', 'squash', 'Manis asam buah stroberi segar dipadukan dengan soda dingin effervescent.', null, 14000, null, 'iceOnly', false, false, '🍓', 29),
+('squ-4', 'Lychee Squash', 'Squash', 'squash', 'Aroma leci tropis manis harum dengan sensasi dingin soda yang refreshing.', null, 14000, null, 'iceOnly', false, false, '🍒', 30),
+('squ-5', 'Manggo Squash', 'Squash', 'squash', 'Manis legit buah mangga matang disajikan dengan soda dingin bergelembung.', null, 14000, null, 'iceOnly', false, false, '🥭', 31),
+('sak-1', 'Kopi Susu Aren 200ml', 'Kopi Saku 200ml', 'saku', 'Kopi susu gula aren kemasan saku 200ml praktis, cocok dibawa kerja atau kuliah.', null, null, 12000, 'iceOnly', true, false, '🧃', 32),
+('sak-2', 'Kopi Susu Hazelnut 200ml', 'Kopi Saku 200ml', 'saku', 'Kopi susu aroma kacang hazelnut kemasan botol siap minum di mana saja.', null, null, 13000, 'iceOnly', false, false, '🧃', 33),
+('sak-3', 'Matcha Latte 200ml', 'Kopi Saku 200ml', 'saku', 'Matcha latte Jepang kemasan praktis 200ml dingin, menyegarkan hari Anda.', null, null, 13000, 'iceOnly', false, false, '🧃', 34)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    category = EXCLUDED.category,
+    category_slug = EXCLUDED.category_slug,
+    description = EXCLUDED.description,
+    price_hot = EXCLUDED.price_hot,
+    price_ice = EXCLUDED.price_ice,
+    price_fixed = EXCLUDED.price_fixed,
+    temp_option = EXCLUDED.temp_option,
+    is_best_seller = EXCLUDED.is_best_seller,
+    is_new = EXCLUDED.is_new,
+    icon_emoji = EXCLUDED.icon_emoji,
+    sort_order = EXCLUDED.sort_order,
+    updated_at = now();
+
+-- ============================================================================
 -- SELESAI. Database Seuma.Koffie 100% Terintegrasi, Realtime & Blockchain Ready!
 -- ============================================================================
