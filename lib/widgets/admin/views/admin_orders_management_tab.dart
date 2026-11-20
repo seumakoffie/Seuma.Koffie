@@ -1,10 +1,13 @@
 // lib/widgets/admin/views/admin_orders_management_tab.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/order_model.dart';
 import '../../../theme/app_theme.dart';
 import '../../../state/admin_state.dart';
 import '../components/delivery_verification_modal.dart';
+import '../components/admin_delivery_mini_map.dart';
+import '../components/admin_map_full_view_modal.dart';
 
 class AdminOrdersManagementTab extends StatelessWidget {
   const AdminOrdersManagementTab({super.key});
@@ -340,32 +343,64 @@ class AdminOrdersManagementTab extends StatelessWidget {
                       'Penerima: ${order.recipientName} (${order.recipientPhone})',
                       style: const TextStyle(fontSize: 11.5, color: AppColors.textDark),
                     ),
+
+                    // === Mini-Map Preview (hanya jika koordinat GPS tersedia) ===
+                    if (order.deliveryLat != null && order.deliveryLng != null) ...[
+                      const SizedBox(height: 10),
+                      AdminDeliveryMiniMap(
+                        lat: order.deliveryLat!,
+                        lng: order.deliveryLng!,
+                        address: order.deliveryAddress,
+                        onTap: () => AdminMapFullViewModal.show(context, order),
+                      ),
+                    ],
+
                     const SizedBox(height: 8),
 
-                    // Tombol Titik GPS Google Maps & Tag COD
+                    // Tombol Aksi: Navigasi GPS, Chat WA, Peta, COD
                     Wrap(
                       spacing: 8,
                       runSpacing: 6,
                       children: [
+                        // Tombol Rute Google Maps (buka browser langsung)
                         OutlinedButton.icon(
-                          onPressed: () {
+                          onPressed: () async {
                             final lat = order.deliveryLat ?? 5.1801;
                             final lng = order.deliveryLng ?? 97.1407;
-                            final navLink = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
-                            Clipboard.setData(ClipboardData(text: navLink));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('🛵 Rute Navigasi Kurir (Google Maps) disalin: $navLink'),
-                                backgroundColor: const Color(0xFF1B5E20),
-                                duration: const Duration(seconds: 4),
-                              ),
-                            );
+                            final uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
+                            final messenger = ScaffoldMessenger.of(context);
+                            final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            if (!opened) {
+                              await Clipboard.setData(ClipboardData(text: uri.toString()));
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('📋 Link rute disalin (browser tidak terbuka): $uri'),
+                                  backgroundColor: const Color(0xFF1B5E20),
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
+                            }
                           },
                           icon: const Icon(Icons.directions_bike_rounded, size: 14, color: Color(0xFF2E7D32)),
-                          label: const Text('🛵 Rute Navigasi Kurir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1B5E20))),
+                          label: const Text('🛵 Rute Google Maps', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1B5E20))),
                           style: OutlinedButton.styleFrom(
                             backgroundColor: const Color(0xFFE8F5E9),
                             side: const BorderSide(color: Color(0xFF81C784)),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+
+                        // Tombol Lihat Peta Besar (modal interaktif)
+                        OutlinedButton.icon(
+                          onPressed: () => AdminMapFullViewModal.show(context, order),
+                          icon: const Icon(Icons.map_rounded, size: 13, color: Color(0xFF5C6BC0)),
+                          label: const Text('🔍 Lihat Peta', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5C6BC0))),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE8EAF6),
+                            side: const BorderSide(color: Color(0xFF9FA8DA)),
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
