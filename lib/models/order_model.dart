@@ -1,4 +1,14 @@
 // lib/models/order_model.dart
+import 'dart:math';
+
+String generateUuidV4() {
+  final random = Random.secure();
+  final values = List<int>.generate(16, (i) => random.nextInt(256));
+  values[6] = (values[6] & 0x0f) | 0x40; // Version 4
+  values[8] = (values[8] & 0x3f) | 0x80; // Variant 10xx
+  final hex = values.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}';
+}
 
 enum OrderStatus {
   pending,
@@ -187,6 +197,7 @@ class OrderModel {
   final String? deliveryNotes;
   final double? deliveryLat;
   final double? deliveryLng;
+  final String? mapsUrl;
 
   // Verifikasi Pengantaran di Lokasi
   final String? verifiedBy;
@@ -203,7 +214,7 @@ class OrderModel {
     this.userId,
     required this.totalAmount,
     this.status = OrderStatus.pending,
-    this.paymentMethod = PaymentMethod.qris,
+    this.paymentMethod = PaymentMethod.cod,
     this.paymentStatus = 'unpaid',
     required this.recipientName,
     required this.recipientPhone,
@@ -211,6 +222,7 @@ class OrderModel {
     this.deliveryNotes,
     this.deliveryLat,
     this.deliveryLng,
+    this.mapsUrl,
     this.verifiedBy,
     this.deliveryProofUrl,
     this.deliveryVerificationHash,
@@ -233,6 +245,7 @@ class OrderModel {
     String? deliveryNotes,
     double? deliveryLat,
     double? deliveryLng,
+    String? mapsUrl,
     String? verifiedBy,
     String? deliveryProofUrl,
     String? deliveryVerificationHash,
@@ -254,6 +267,7 @@ class OrderModel {
       deliveryNotes: deliveryNotes ?? this.deliveryNotes,
       deliveryLat: deliveryLat ?? this.deliveryLat,
       deliveryLng: deliveryLng ?? this.deliveryLng,
+      mapsUrl: mapsUrl ?? this.mapsUrl,
       verifiedBy: verifiedBy ?? this.verifiedBy,
       deliveryProofUrl: deliveryProofUrl ?? this.deliveryProofUrl,
       deliveryVerificationHash: deliveryVerificationHash ?? this.deliveryVerificationHash,
@@ -277,6 +291,7 @@ class OrderModel {
     'delivery_notes': deliveryNotes,
     'delivery_lat': deliveryLat,
     'delivery_lng': deliveryLng,
+    if (mapsUrl != null) 'maps_url': mapsUrl,
     'verified_by': verifiedBy,
     'delivery_proof_url': deliveryProofUrl,
     'delivery_verification_hash': deliveryVerificationHash,
@@ -299,6 +314,7 @@ class OrderModel {
       deliveryNotes: json['delivery_notes']?.toString(),
       deliveryLat: (json['delivery_lat'] as num?)?.toDouble(),
       deliveryLng: (json['delivery_lng'] as num?)?.toDouble(),
+      mapsUrl: json['maps_url']?.toString(),
       verifiedBy: json['verified_by']?.toString(),
       deliveryProofUrl: json['delivery_proof_url']?.toString(),
       deliveryVerificationHash: json['delivery_verification_hash']?.toString(),

@@ -325,9 +325,27 @@ class SeumaSupabaseService {
   Future<bool> placeCustomerOrder(OrderModel order) async {
     if (client == null) return false;
     try {
-      await client!.from('orders').insert(order.toJson());
+      final orderData = order.toJson();
+      // Pastikan format ID adalah UUID valid untuk PostgreSQL
+      final validOrderId = (order.id.length >= 32 && order.id.contains('-')) 
+          ? order.id 
+          : generateUuidV4();
+      orderData['id'] = validOrderId;
+
+      // Sanitasi user_id jika user belum login atau id tidak valid
+      if (orderData['user_id'] == null || (orderData['user_id'] as String).isEmpty) {
+        orderData.remove('user_id');
+      }
+
+      await client!.from('orders').insert(orderData);
+
       for (final it in order.items) {
-        await client!.from('order_items').insert(it.toJson());
+        final itData = it.toJson();
+        itData['id'] = (it.id.length >= 32 && it.id.contains('-')) 
+            ? it.id 
+            : generateUuidV4();
+        itData['order_id'] = validOrderId;
+        await client!.from('order_items').insert(itData);
       }
       return true;
     } catch (e) {

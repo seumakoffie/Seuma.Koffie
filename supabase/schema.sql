@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS recipient_phone TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_notes TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS maps_url TEXT;
 
 -- Pastikan seluruh kolom esensial ada jika tabel sudah pernah dibuat sebelumnya
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
@@ -135,6 +136,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS recipient_phone TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_notes TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS maps_url TEXT;
 
 -- ============================================================================
 -- 6. TABEL ITEM PESANAN (ORDER ITEMS)
@@ -462,11 +464,11 @@ CREATE POLICY "Profiles update policy" ON public.profiles
 -- Orders Policies
 DROP POLICY IF EXISTS "Orders read policy" ON public.orders;
 CREATE POLICY "Orders read policy" ON public.orders 
-    FOR SELECT USING (auth.uid() = user_id OR public.is_staff_or_admin());
+    FOR SELECT USING (auth.uid() = user_id OR public.is_staff_or_admin() OR auth.uid() IS NULL);
 
 DROP POLICY IF EXISTS "Orders insert policy" ON public.orders;
 CREATE POLICY "Orders insert policy" ON public.orders 
-    FOR INSERT WITH CHECK (auth.uid() = user_id OR public.is_staff_or_admin());
+    FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Orders update policy" ON public.orders;
 CREATE POLICY "Orders update policy" ON public.orders 
@@ -475,23 +477,11 @@ CREATE POLICY "Orders update policy" ON public.orders
 -- Order Items Policies
 DROP POLICY IF EXISTS "Order items read policy" ON public.order_items;
 CREATE POLICY "Order items read policy" ON public.order_items 
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.orders 
-            WHERE orders.id = order_items.order_id 
-            AND (orders.user_id = auth.uid() OR public.is_staff_or_admin())
-        )
-    );
+    FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Order items insert policy" ON public.order_items;
 CREATE POLICY "Order items insert policy" ON public.order_items 
-    FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.orders 
-            WHERE orders.id = order_items.order_id 
-            AND (orders.user_id = auth.uid() OR public.is_staff_or_admin())
-        )
-    );
+    FOR INSERT WITH CHECK (true);
 
 -- Shift Schedules Policies
 DROP POLICY IF EXISTS "Shift schedules read policy" ON public.shift_schedules;

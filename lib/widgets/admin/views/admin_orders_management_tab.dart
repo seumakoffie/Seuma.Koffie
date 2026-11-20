@@ -1,5 +1,6 @@
 // lib/widgets/admin/views/admin_orders_management_tab.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../models/order_model.dart';
 import '../../../theme/app_theme.dart';
 import '../../../state/admin_state.dart';
@@ -249,6 +250,58 @@ class AdminOrdersManagementTab extends StatelessWidget {
                     Text(
                       'Penerima: ${order.recipientName} (${order.recipientPhone})',
                       style: const TextStyle(fontSize: 11.5, color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Tombol Titik GPS Google Maps & Tag COD
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            final lat = order.deliveryLat ?? 5.1801;
+                            final lng = order.deliveryLng ?? 97.1407;
+                            final mapsLink = order.mapsUrl ?? 'https://www.google.com/maps?q=$lat,$lng';
+                            Clipboard.setData(ClipboardData(text: mapsLink));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('📍 Koordinat Google Maps disalin: $mapsLink'),
+                                backgroundColor: Colors.green.shade800,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.map_rounded, size: 14, color: Colors.blue),
+                          label: const Text('🗺️ Titik GPS Maps', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                        if (order.paymentMethod == PaymentMethod.cod)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.amber.shade400),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.payments_rounded, size: 12, color: Color(0xFFE65100)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '💵 Tagih COD: Rp ${order.totalAmount.toInt()}',
+                                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFFE65100)),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
