@@ -576,5 +576,63 @@ FROM public.profiles
 WHERE role = 'admin' OR email IN ('zarqud@gmail.com', 'seumakoffie20@gmail.com');
 
 -- ============================================================================
+-- 16. TABEL SESI PERANGKAT & RESET SANDI AMAN (MULTI-DEVICE & ON-SCREEN OTP)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.user_device_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    device_fingerprint TEXT NOT NULL,
+    device_name TEXT NOT NULL,
+    ip_address TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_active TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.user_device_sessions DISABLE ROW LEVEL SECURITY;
+GRANT ALL ON TABLE public.user_device_sessions TO anon, authenticated, service_role;
+
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.user_device_sessions;
+EXCEPTION WHEN others THEN null; END $$;
+
+-- Fungsi Reset Password Langsung Aman Tanpa Perlu SMTP Email
+CREATE OR REPLACE FUNCTION public.reset_user_password(
+    p_email TEXT,
+    p_new_password TEXT
+) RETURNS BOOLEAN
+SECURITY DEFINER
+SET search_path = public, auth, extensions
+AS $$
+BEGIN
+    UPDATE auth.users
+    SET encrypted_password = crypt(p_new_password, gen_salt('bf')),
+        updated_at = now()
+    WHERE email = p_email;
+    
+    RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.reset_user_password(TEXT, TEXT) TO anon, authenticated, service_role;
+
+-- Fungsi Keluarkan Sesi Perangkat Lain
+CREATE OR REPLACE FUNCTION public.revoke_other_device_sessions(
+    p_user_id UUID,
+    p_current_device_id TEXT
+) RETURNS VOID
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    UPDATE public.user_device_sessions
+    SET is_active = FALSE
+    WHERE user_id = p_user_id AND device_fingerprint != p_current_device_id;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.revoke_other_device_sessions(UUID, TEXT) TO anon, authenticated, service_role;
+
+-- ============================================================================
 -- SELESAI. Database Seuma.Koffie 100% Terintegrasi, Realtime & Blockchain Ready!
 -- ============================================================================

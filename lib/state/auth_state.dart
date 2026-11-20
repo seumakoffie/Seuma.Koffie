@@ -1,4 +1,5 @@
 // lib/state/auth_state.dart
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
@@ -12,6 +13,12 @@ class AuthManager extends ChangeNotifier {
 
   UserModel? _currentUser;
   bool _isLoading = false;
+  bool _isRememberMe = true;
+
+  // Pelacakan Perangkat & Multi-Device Alert
+  final String _currentDeviceFingerprint = 'seuma-dev-${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
+  List<Map<String, dynamic>> _activeDeviceSessions = [];
+  StreamSubscription<List<Map<String, dynamic>>>? _deviceSessionSub;
 
   // Anti-Brute Force Tracking & Rate Limiting Guard
   int _failedAttempts = 0;
@@ -20,7 +27,18 @@ class AuthManager extends ChangeNotifier {
   UserModel? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
   bool get isLoading => _isLoading;
+  bool get isRememberMe => _isRememberMe;
   int get failedAttempts => _failedAttempts;
+
+  List<Map<String, dynamic>> get activeDeviceSessions => _activeDeviceSessions;
+  bool get hasMultiDeviceAlert => _activeDeviceSessions.length > 1;
+  int get activeDeviceCount => _activeDeviceSessions.isEmpty ? 1 : _activeDeviceSessions.length;
+  String get currentDeviceFingerprint => _currentDeviceFingerprint;
+
+  void setRememberMe(bool val) {
+    _isRememberMe = val;
+    notifyListeners();
+  }
 
   bool get isAdmin => _currentUser?.isAdmin ?? false;
   bool get isShift => _currentUser?.isShift ?? false;
@@ -75,7 +93,6 @@ class AuthManager extends ChangeNotifier {
         } else {
           _currentUser = profile;
         }
-        notifyListeners();
       } else if (isOwner) {
         _currentUser = UserModel(
           id: userId,
@@ -85,10 +102,96 @@ class AuthManager extends ChangeNotifier {
           role: UserRole.admin,
           memberTier: 'Super Admin',
         );
-        notifyListeners();
       }
+
+      // Daftarkan sesi perangkat dan dengarkan status multi-perangkat
+      _initDeviceTracking(userId);
+
+      notifyListeners();
     } catch (e) {
       debugPrint('Error _fetchAndSetProfile: $e');
+    }
+  }
+
+  void _initDeviceTracking(String userId) {
+    try {
+      final s = SeumaSupabaseService.instance;
+      s.registerDeviceSession(
+        userId: userId,
+        deviceFingerprint: _currentDeviceFingerprint,
+        deviceName: kIsWeb ? 'Web Browser (Perangkat Ini)' : 'Aplikasi Seuma.Koffie',
+      );
+
+      _deviceSessionSub?.cancel();
+      _deviceSessionSub = s.deviceSessionsStream(userId).listen((sessions) {
+        _activeDeviceSessions = sessions;
+        notifyListeners();
+      });
+
+      // Muat awal daftar perangkat aktif
+      s.getActiveDeviceSessions(userId).then((list) {
+        if (list.isNotEmpty) {
+          _activeDeviceSessions = list;
+          notifyListeners();
+        }
+      });
+    } catch (e) {
+      debugPrint('Error initDeviceTracking: $e');
+    }
+  }
+
+  Future<bool> revokeOtherDeviceSessions() async {
+    final user = _currentUser;
+    if (user == null) return false;
+    final success = await SeumaSupabaseService.instance.revokeOtherDeviceSessions(
+      userId: user.id,
+      currentFingerprint: _currentDeviceFingerprint,
+    );
+    if (success) {
+      _activeDeviceSessions = _activeDeviceSessions
+          .where((s) => s['device_fingerprint'] == _currentDeviceFingerprint)
+          .toList();
+      notifyListeners();
+    }
+    return success;
+  }
+
+  /// Reset Password menggunakan On-Screen OTP tanpa perlu email
+  Future<String?> resetPasswordWithOnScreenOtp({
+    required String email,
+    required String newPassword,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final exists = await SeumaSupabaseService.instance.checkEmailExists(email);
+      if (!exists) {
+        _isLoading = false;
+        notifyListeners();
+        return 'Email tidak ditemukan dalam sistem Seuma.Koffie.';
+      }
+
+      final success = await SeumaSupabaseService.instance.resetUserPasswordDirectly(
+        email: email,
+        newPassword: newPassword,
+      );
+
+      if (success) {
+        // Otomatis login dengan password baru
+        final loginErr = await login(identifier: email, password: newPassword);
+        _isLoading = false;
+        notifyListeners();
+        return loginErr; // null jika sukses login
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return 'Gagal memperbarui kata sandi. Silakan coba lagi.';
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Terjadi kendala reset kata sandi: $e';
     }
   }
 
@@ -280,6 +383,8 @@ class AuthManager extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    _deviceSessionSub?.cancel();
+    _activeDeviceSessions.clear();
     await SeumaSupabaseService.instance.signOut();
     _currentUser = null;
     notifyListeners();

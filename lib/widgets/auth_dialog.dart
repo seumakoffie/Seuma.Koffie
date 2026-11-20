@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import 'common/fraud_warning_box.dart';
 import 'auth/terms_conditions_dialog.dart';
 import 'auth/security_trust_strip.dart';
+import 'auth/forgot_password_dialog.dart';
 
 class AuthDialog extends StatefulWidget {
   final bool initialIsRegister;
@@ -510,6 +511,71 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
+
+              // OPSI LOGIN: INGAT SAYA & LUPA KATA SANDI
+              if (!_isRegister) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Ingat Saya Checkbox
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: Checkbox(
+                            value: auth.isRememberMe,
+                            activeColor: AppColors.caramel,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            onChanged: (val) {
+                              auth.setRememberMe(val ?? true);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            auth.setRememberMe(!auth.isRememberMe);
+                          },
+                          child: const Text(
+                            'Ingat Saya',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Lupa Kata Sandi Link
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        ForgotPasswordDialog.show(
+                          context,
+                          initialEmail: _emailOrPhoneCtrl.text.trim(),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'Lupa Kata Sandi?',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.caramel,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
 
               // CHECKBOX SYARAT & KETENTUAN (Khusus Pendaftaran Akun)
               if (_isRegister) ...[
