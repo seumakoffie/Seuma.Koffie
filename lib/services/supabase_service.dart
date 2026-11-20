@@ -356,6 +356,11 @@ class SeumaSupabaseService {
         }
       }
 
+      // Pastikan kolom enkripsi E2EE selalu terisi untuk mencegah not-null constraint violation (Code 23502)
+      orderData['delivery_address_encrypted'] ??= order.deliveryAddress;
+      orderData['recipient_phone_encrypted'] ??= order.recipientPhone;
+      orderData['delivery_notes_encrypted'] ??= (order.deliveryNotes ?? '');
+
       // Bersihkan list items jika ikut terbawa dalam map orderData
       orderData.remove('items');
 
@@ -370,6 +375,11 @@ class SeumaSupabaseService {
           await client!.from('orders').insert(orderData);
         } else if (errStr.contains('user_id') || errStr.contains('fkey')) {
           orderData.remove('user_id');
+          await client!.from('orders').insert(orderData);
+        } else if (errStr.contains('23502') || errStr.contains('not-null')) {
+          orderData['delivery_address_encrypted'] = order.deliveryAddress;
+          orderData['recipient_phone_encrypted'] = order.recipientPhone;
+          orderData['delivery_notes_encrypted'] = (order.deliveryNotes ?? '');
           await client!.from('orders').insert(orderData);
         } else {
           rethrow;
