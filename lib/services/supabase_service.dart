@@ -201,17 +201,10 @@ class SeumaSupabaseService {
         res = await client!
             .from('profiles')
             .select()
-            .eq('role', 'customer')
-            .order('created_at', ascending: false);
-      } catch (_) {
-        try {
-          res = await client!
-              .from('profiles')
-              .select()
-              .eq('role', 'customer');
-        } catch (_) {
-          res = await client!.from('profiles').select();
-        }
+            .eq('role', 'customer');
+      } catch (e1) {
+        debugPrint('fetchConsumers eq role error: $e1, fallback to select all');
+        res = await client!.from('profiles').select();
       }
 
       if (res is List) {

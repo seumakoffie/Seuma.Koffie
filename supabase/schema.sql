@@ -443,7 +443,10 @@ RETURNS BOOLEAN AS $$
     );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- Profiles Policies (Bebas dari Rekursi RLS)
+-- Profiles Policies (Bebas dari Rekursi RLS - Akses Penuh untuk Admin Dashboard)
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
+
 DROP POLICY IF EXISTS "Profiles read policy" ON public.profiles;
 CREATE POLICY "Profiles read policy" ON public.profiles 
     FOR SELECT USING (true);

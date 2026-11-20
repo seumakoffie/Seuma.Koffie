@@ -87,18 +87,29 @@ class AdminManager extends ChangeNotifier {
 
     try {
       final s = SeumaSupabaseService.instance;
-      _consumers = await s.fetchConsumers();
-      _shiftKeepers = await s.fetchShiftKeepers();
-      _shiftSchedules = await s.fetchShiftSchedules();
-      _orders = await s.fetchOrders();
-      _blockchainBlocks = await s.fetchBlockchainBlocks();
-      _blockchainStatus = await s.verifyBlockchainIntegrity();
+
+      // 1. Ambil data konsumen terlebih dahulu secara instan
+      s.fetchConsumers().then((res) {
+        _consumers = res;
+        _isLoading = false;
+        notifyListeners();
+      }).catchError((e) {
+        debugPrint('Error loading consumers: $e');
+        _isLoading = false;
+        notifyListeners();
+      });
+
+      // 2. Ambil data lainnya secara paralel di background tanpa memblokir tab konsumen
+      s.fetchShiftKeepers().then((res) { _shiftKeepers = res; notifyListeners(); }).catchError((_) {});
+      s.fetchShiftSchedules().then((res) { _shiftSchedules = res; notifyListeners(); }).catchError((_) {});
+      s.fetchOrders().then((res) { _orders = res; notifyListeners(); }).catchError((_) {});
+      s.fetchBlockchainBlocks().then((res) { _blockchainBlocks = res; notifyListeners(); }).catchError((_) {});
+      s.verifyBlockchainIntegrity().then((res) { _blockchainStatus = res; notifyListeners(); }).catchError((_) {});
 
       startRealtimeOrdersListener();
       startRealtimeConsumersListener();
     } catch (e) {
       debugPrint('Error loading admin data: $e');
-    } finally {
       _isLoading = false;
       notifyListeners();
     }

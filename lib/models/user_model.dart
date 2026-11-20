@@ -6,7 +6,7 @@ enum UserRole {
   admin;
 
   static UserRole fromString(String? role) {
-    switch (role?.toLowerCase()) {
+    switch (role?.trim().toLowerCase()) {
       case 'admin':
         return UserRole.admin;
       case 'shift':
