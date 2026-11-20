@@ -1,5 +1,6 @@
 // lib/state/cart_state.dart
 import 'package:flutter/foundation.dart';
+import '../models/menu_item.dart';
 
 class CartItem {
   final String id;
@@ -23,6 +24,9 @@ class CartItem {
     this.quantity = 1,
     required this.iconEmoji,
   });
+
+  String? get imagePath => kMenuImageMap[name] ?? kMenuImageMap[menuItemId];
+  bool get hasImage => imagePath != null;
 
   int get totalPrice => unitPrice * quantity;
 }

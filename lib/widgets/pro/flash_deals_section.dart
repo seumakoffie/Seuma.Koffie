@@ -226,10 +226,21 @@ class _FlashDealsSectionState extends State<FlashDealsSection> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
-                  child: Text(
-                    item.imageAsset,
-                    style: const TextStyle(fontSize: 36),
-                  ),
+                  child: item.hasImage
+                      ? Image.asset(
+                          item.resolvedImagePath!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Text(
+                            item.iconEmoji,
+                            style: const TextStyle(fontSize: 36),
+                          ),
+                        )
+                      : Text(
+                          item.iconEmoji,
+                          style: const TextStyle(fontSize: 36),
+                        ),
                 ),
               ),
               Positioned(

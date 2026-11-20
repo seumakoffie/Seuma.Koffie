@@ -106,15 +106,29 @@ class _ProductDialogState extends State<ProductDialog> {
               Row(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 58,
+                    height: 58,
                     decoration: BoxDecoration(
                       color: AppColors.creamLight,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.caramel.withValues(alpha: 0.2)),
                     ),
                     child: Center(
-                      child: Text(item.iconEmoji, style: const TextStyle(fontSize: 28)),
+                      child: item.hasImage
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                item.resolvedImagePath!,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Text(
+                                  item.iconEmoji,
+                                  style: const TextStyle(fontSize: 28),
+                                ),
+                              ),
+                            )
+                          : Text(item.iconEmoji, style: const TextStyle(fontSize: 28)),
                     ),
                   ),
                   const SizedBox(width: 14),

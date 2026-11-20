@@ -15,6 +15,7 @@ class MenuItem {
   final bool isBestSeller;
   final bool isNew;
   final String iconEmoji;
+  final String? imagePath;
 
   const MenuItem({
     required this.id,
@@ -29,7 +30,15 @@ class MenuItem {
     this.isBestSeller = false,
     this.isNew = false,
     required this.iconEmoji,
+    this.imagePath,
   });
+
+  String? get resolvedImagePath {
+    if (imagePath != null && imagePath!.isNotEmpty) return imagePath;
+    return kMenuImageMap[name] ?? kMenuImageMap[id];
+  }
+
+  bool get hasImage => resolvedImagePath != null && resolvedImagePath!.isNotEmpty;
 
   int get startingPrice {
     if (priceFixed != null) return priceFixed!;
@@ -53,8 +62,67 @@ class MenuItem {
     return 'Rp ${buffer.toString()}';
   }
 
-  String get imageAsset => iconEmoji;
+  String get imageAsset => resolvedImagePath ?? iconEmoji;
 }
+
+const Map<String, String> kMenuImageMap = {
+  // Espresso
+  'Espresso': 'lib/gambar_menu/Espresso.png',
+
+  // Americano
+  'Americano': 'lib/gambar_menu/Americano.png',
+  'Peach Americano': 'lib/gambar_menu/Americano Peach.png',
+  'Lemon Americano': 'lib/gambar_menu/Americano Lemon.png',
+  'Orange Americano': 'lib/gambar_menu/Americano Orange.png',
+
+  // Sanger
+  'Sanger Espresso': 'lib/gambar_menu/Sanger Espresso.png',
+  'Sanger Tegur': 'lib/gambar_menu/Sanger Espresso.png',
+
+  // Kopi Susu
+  'Kopi Susu Aren': 'lib/gambar_menu/Kopi Susu Aren.png',
+  'Kopi Susu Vanilla': 'lib/gambar_menu/Kopi Susu Creamy.png',
+  'Kopi Susu Hazelnut': 'lib/gambar_menu/Kopi Susu Hazelnut.png',
+  'Kopi Susu Caramel': 'lib/gambar_menu/Kopi Susu Caramel.png',
+  'Kopi Susu Pandan': 'lib/gambar_menu/Kopi Susu Pandan.png',
+  'Kopi Susu Butterscotch': 'lib/gambar_menu/Kopi Susu Butterscotch.png',
+  'Seasalt Caramel Latte': 'lib/gambar_menu/Seasalt Caramel Latte.png',
+  'Seasalt Butterscotch Latte': 'lib/gambar_menu/Seasalt Butterscotch Latte.png',
+
+  // Latte
+  'Coffee Latte': 'lib/gambar_menu/Coffee Latte.png',
+  'Spanish Latte': 'lib/gambar_menu/Spanish Latte.png',
+
+  // Kopi Rasa
+  'Kopi Taro': 'lib/gambar_menu/Kopi Taro.png',
+  'Kopi Coklat': 'lib/gambar_menu/Kopi Coklat.png',
+  'Kopi Red Velved': 'lib/gambar_menu/Kopi Red Velved.png',
+
+  // Non Kopi
+  'Taro Latte': 'lib/gambar_menu/Taro Latte.png',
+  'Coklat Latte': 'lib/gambar_menu/Chocolate Latte.png',
+  'Red Velved Latte': 'lib/gambar_menu/Red Velved Latte.png',
+
+  // Matcha
+  'Matcha Original': 'lib/gambar_menu/Matcha Original.png',
+  'Matcha Latte': 'lib/gambar_menu/Matcha Latte.png',
+  'Strawberry Matcha': 'lib/gambar_menu/Matcha Strawberry.png',
+
+  // Squash
+  'Orange Squash': 'lib/gambar_menu/Orange Squash.png',
+  'Lemon Squash': 'lib/gambar_menu/Americano Lemon.png',
+  'Strawberry Squash': 'lib/gambar_menu/Strawberry Squash.png',
+  'Lychee Squash': 'lib/gambar_menu/Lychee Squash.png',
+  'Mango Squash': 'lib/gambar_menu/Manggo Squash.png',
+
+  // Kopi Saku 200ml
+  'Kopi Sanger Espresso 200ml': 'lib/gambar_menu/Sanger Espresso.png',
+  'Kopi Susu Aren 200ml': 'lib/gambar_menu/Kopi Susu Aren.png',
+  'Kopi Susu Pandan 200ml': 'lib/gambar_menu/Kopi Susu Pandan.png',
+  'Kopi Susu Caramel 200ml': 'lib/gambar_menu/Kopi Susu Caramel.png',
+  'Kopi Susu Hazelnut 200ml': 'lib/gambar_menu/Kopi Susu Hazelnut.png',
+  'Kopi Susu Butterscotch 200ml': 'lib/gambar_menu/Kopi Susu Butterscotch.png',
+};
 
 class CategoryInfo {
   final String slug;

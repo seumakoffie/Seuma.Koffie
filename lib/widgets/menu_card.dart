@@ -113,14 +113,28 @@ class _MenuCardState extends State<MenuCard> {
                           ),
                         ),
 
-                        // Animated Drink Visual
+                        // Animated Drink Visual (Foto Menu atau Emoji)
                         AnimatedScale(
                           duration: const Duration(milliseconds: 220),
-                          scale: _isHovered ? 1.15 : 1.0,
-                          child: Text(
-                            item.iconEmoji,
-                            style: const TextStyle(fontSize: 48),
-                          ),
+                          scale: _isHovered ? 1.08 : 1.0,
+                          child: item.hasImage
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Image.asset(
+                                    item.resolvedImagePath!,
+                                    width: 95,
+                                    height: 95,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => Text(
+                                      item.iconEmoji,
+                                      style: const TextStyle(fontSize: 48),
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  item.iconEmoji,
+                                  style: const TextStyle(fontSize: 48),
+                                ),
                         ),
                       ],
                     ),

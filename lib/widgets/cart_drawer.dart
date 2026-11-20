@@ -170,7 +170,7 @@ class _CartDrawerState extends State<CartDrawer> {
                           ),
                           child: Row(
                             children: [
-                              // Emoji
+                              // Thumbnail (Foto Menu atau Emoji)
                               Container(
                                 width: 44,
                                 height: 44,
@@ -179,7 +179,18 @@ class _CartDrawerState extends State<CartDrawer> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Center(
-                                  child: Text(item.iconEmoji, style: const TextStyle(fontSize: 22)),
+                                  child: item.hasImage
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.asset(
+                                            item.imagePath!,
+                                            width: 38,
+                                            height: 38,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (_, __, ___) => Text(item.iconEmoji, style: const TextStyle(fontSize: 22)),
+                                          ),
+                                        )
+                                      : Text(item.iconEmoji, style: const TextStyle(fontSize: 22)),
                                 ),
                               ),
                               const SizedBox(width: 12),

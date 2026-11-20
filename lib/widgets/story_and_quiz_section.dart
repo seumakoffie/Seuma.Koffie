@@ -334,7 +334,18 @@ class _StoryAndQuizSectionState extends State<StoryAndQuizSection>
                           ),
                           child: Row(
                             children: [
-                              Text(item.iconEmoji, style: const TextStyle(fontSize: 26)),
+                              item.hasImage
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.asset(
+                                        item.resolvedImagePath!,
+                                        width: 32,
+                                        height: 32,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) => Text(item.iconEmoji, style: const TextStyle(fontSize: 26)),
+                                      ),
+                                    )
+                                  : Text(item.iconEmoji, style: const TextStyle(fontSize: 26)),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
