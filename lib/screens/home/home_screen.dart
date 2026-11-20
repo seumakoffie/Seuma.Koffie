@@ -5,7 +5,6 @@ import '../../state/cart_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/pro/split_hero_section.dart';
 import '../../widgets/pro/category_story_bubbles.dart';
-import '../../widgets/pro/flash_deals_section.dart';
 import '../../widgets/navbar/corporate_navbar.dart';
 import '../../widgets/pro/about_section_v3.dart';
 import '../../widgets/pro/footer_v3.dart';
@@ -13,7 +12,6 @@ import '../../widgets/cart_drawer.dart';
 import '../../widgets/auth_dialog.dart';
 import '../../widgets/auth/welcome_order_prompt_dialog.dart';
 import '../../state/auth_state.dart';
-import '../../widgets/product_dialog.dart';
 import '../../widgets/story_and_quiz_section.dart';
 import '../../widgets/customer/live_order_tracker_banner.dart';
 import 'widgets/notification_strip.dart';
@@ -31,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _menuSectionKey = GlobalKey();
-  final GlobalKey _promoSectionKey = GlobalKey();
   final GlobalKey _aboutSectionKey = GlobalKey();
   final GlobalKey _footerSectionKey = GlobalKey();
   static bool _hasShownWelcomeDialog = false;
@@ -130,17 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Flash Deals / Promo Kilat Section
-              SliverToBoxAdapter(
-                child: Container(
-                  key: _promoSectionKey,
-                  child: FlashDealsSection(
-                    items: kMenuItems.where((item) => item.isBestSeller).toList(),
-                    onAddToCart: (item) => ProductDialog.show(context, item),
-                  ),
-                ),
-              ),
-
               // Interactive Taste Quiz Section
               const SliverToBoxAdapter(
                 child: StoryAndQuizSection(),
@@ -191,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onShowCart: () => CartDrawer.show(context),
               onShowAuth: () => AuthDialog.show(context),
               onScrollToAbout: () => _scrollToKey(_aboutSectionKey),
-              onScrollToPromo: () => _scrollToKey(_promoSectionKey),
+              onScrollToPromo: () => _scrollToKey(_menuSectionKey),
               onScrollToLocation: () => _scrollToKey(_footerSectionKey),
               onScrollToTop: _scrollToTop,
               onSelectCategory: (slug) {
