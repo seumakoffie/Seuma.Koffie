@@ -262,19 +262,46 @@ class AdminOrdersManagementTab extends StatelessWidget {
                           onPressed: () {
                             final lat = order.deliveryLat ?? 5.1801;
                             final lng = order.deliveryLng ?? 97.1407;
-                            final mapsLink = order.mapsUrl ?? 'https://www.google.com/maps?q=$lat,$lng';
-                            Clipboard.setData(ClipboardData(text: mapsLink));
+                            final navLink = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
+                            Clipboard.setData(ClipboardData(text: navLink));
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('📍 Koordinat Google Maps disalin: $mapsLink'),
-                                backgroundColor: Colors.green.shade800,
-                                duration: const Duration(seconds: 3),
+                                content: Text('🛵 Rute Navigasi Kurir (Google Maps) disalin: $navLink'),
+                                backgroundColor: const Color(0xFF1B5E20),
+                                duration: const Duration(seconds: 4),
                               ),
                             );
                           },
-                          icon: const Icon(Icons.map_rounded, size: 14, color: Colors.blue),
-                          label: const Text('🗺️ Titik GPS Maps', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                          icon: const Icon(Icons.directions_bike_rounded, size: 14, color: Color(0xFF2E7D32)),
+                          label: const Text('🛵 Rute Navigasi Kurir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1B5E20))),
                           style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE8F5E9),
+                            side: const BorderSide(color: Color(0xFF81C784)),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            final phone = order.recipientPhone.replaceAll(RegExp(r'[^0-9]'), '');
+                            final normalizedPhone = phone.startsWith('0') ? '62${phone.substring(1)}' : (phone.startsWith('62') ? phone : '62$phone');
+                            final waLink = 'https://wa.me/$normalizedPhone?text=Halo%20${Uri.encodeComponent(order.recipientName)},%20kurir%20Seuma.Koffie%20sedang%20mengantar%20pesanan%20${order.orderNumber}';
+                            Clipboard.setData(ClipboardData(text: waLink));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('💬 Tautan WhatsApp Pemesan disalin: $waLink'),
+                                backgroundColor: const Color(0xFF00796B),
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.chat_rounded, size: 13, color: Color(0xFF00796B)),
+                          label: const Text('💬 Chat WA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF00796B))),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE0F2F1),
+                            side: const BorderSide(color: Color(0xFF80CBC4)),
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,

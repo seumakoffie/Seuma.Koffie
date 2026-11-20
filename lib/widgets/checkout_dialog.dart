@@ -7,6 +7,8 @@ import '../state/cart_state.dart';
 import '../theme/app_theme.dart';
 import 'common/fraud_warning_box.dart';
 import 'customer/customer_order_history_dialog.dart';
+import 'location/interactive_gps_picker_widget.dart';
+import '../utils/maps_launcher.dart';
 
 class CheckoutDialog extends StatefulWidget {
   const CheckoutDialog({super.key});
@@ -46,25 +48,19 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
   late String _orderNumber;
   late String _orderUuid;
 
-  // Realtime GPS Location State
+  // Realtime GPS Location State ala Grab/GoFood
   double _deliveryLat = 5.1801;
   double _deliveryLng = 97.1407;
   String _selectedArea = 'Banda Sakti (Pusat Kota)';
-  bool _isGpsLocked = false;
-  bool _isDetectingGps = false;
-
-  final Map<String, List<double>> _lhokseumaweAreas = {
-    'Banda Sakti (Pusat Kota)': [5.1801, 97.1407],
-    'Muara Dua (Cunda / Uteunkot)': [5.1672, 97.1325],
-    'Blang Mangat (Punteut)': [5.1384, 97.1620],
-    'Muara Satu (Batuphat / Arun)': [5.2215, 97.0982],
-  };
+  String _deliveryNotes = '';
+  late String _mapsUrl;
 
   @override
   void initState() {
     super.initState();
     _orderNumber = 'SEUMA-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     _orderUuid = generateUuidV4();
+    _mapsUrl = MapsLauncherHelper.createGoogleMapsUrl(_deliveryLat, _deliveryLng);
     final user = AuthManager.instance.currentUser;
     if (user != null) {
       _nameController.text = user.name;
@@ -78,23 +74,6 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
-  }
-
-  void _lockGpsLocation() {
-    setState(() => _isDetectingGps = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (!mounted) return;
-      final coords = _lhokseumaweAreas[_selectedArea] ?? [5.1801, 97.1407];
-      setState(() {
-        _deliveryLat = coords[0];
-        _deliveryLng = coords[1];
-        _isGpsLocked = true;
-        _isDetectingGps = false;
-        if (_addressController.text.trim().isEmpty) {
-          _addressController.text = 'Kecamatan $_selectedArea, Kota Lhokseumawe (Titik GPS Terkunci)';
-        }
-      });
-    });
   }
 
   @override
@@ -266,126 +245,32 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                       ),
                     ),
 
-                    // ── Bagian Delivery & Titik Maps Realtime ─────────────
+                    // ── Bagian Delivery & Peta Visual GPS Realtime ala Grab/GoFood ──
                     if (_isDelivery) ...[
                       const SizedBox(height: 14),
-
-                      // Area Kecamatan Lhokseumawe Dropdown
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFBF8F5),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.map_outlined, size: 18, color: AppColors.caramel),
-                            const SizedBox(width: 8),
-                            const Text('Wilayah: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                            Expanded(
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _selectedArea,
-                                  isDense: true,
-                                  isExpanded: true,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.espresso),
-                                  items: _lhokseumaweAreas.keys.map((area) {
-                                    return DropdownMenuItem(value: area, child: Text(area));
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedArea = val;
-                                        final coords = _lhokseumaweAreas[val]!;
-                                        _deliveryLat = coords[0];
-                                        _deliveryLng = coords[1];
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      // Tombol Kunci Titik GPS Maps Realtime
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: _isGpsLocked ? Colors.green.shade50 : AppColors.caramel.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _isGpsLocked ? Colors.green.shade300 : AppColors.caramel.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  _isGpsLocked ? Icons.check_circle_rounded : Icons.my_location_rounded,
-                                  size: 18,
-                                  color: _isGpsLocked ? Colors.green.shade700 : AppColors.caramel,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _isGpsLocked
-                                        ? 'Titik GPS Maps Terkunci (${_deliveryLat.toStringAsFixed(4)}, ${_deliveryLng.toStringAsFixed(4)})'
-                                        : 'Kirim Titik Lokasi Realtime (GPS Maps)',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: _isGpsLocked ? Colors.green.shade900 : AppColors.espresso,
-                                    ),
-                                  ),
-                                ),
-                                if (_isDetectingGps)
-                                  const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.caramel))
-                                else
-                                  TextButton(
-                                    onPressed: _lockGpsLocation,
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      _isGpsLocked ? 'Perbarui GPS' : 'Kunci GPS',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.caramel),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'Kurir Seuma akan langsung membuka rute Google Maps ke titik akurat Anda.',
-                              style: TextStyle(fontSize: 10.5, color: _isGpsLocked ? Colors.green.shade800 : Colors.grey.shade700),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      // Alamat / Patokan Tertulis
-                      TextField(
-                        controller: _addressController,
-                        maxLines: 2,
-                        style: const TextStyle(fontSize: 12.5),
-                        decoration: InputDecoration(
-                          labelText: 'Detail Alamat & Patokan Rumah / Kantor *',
-                          labelStyle: const TextStyle(fontSize: 12),
-                          hintText: 'Contoh: Depan Masjid Al-Falah, Pagar Hitam No. 12',
-                          hintStyle: const TextStyle(fontSize: 11, color: Colors.black38),
-                          isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
+                      InteractiveGpsPickerWidget(
+                        initialLat: _deliveryLat,
+                        initialLng: _deliveryLng,
+                        initialArea: _selectedArea,
+                        initialAddress: _addressController.text,
+                        initialNotes: _deliveryNotes,
+                        onLocationChanged: ({
+                          required double lat,
+                          required double lng,
+                          required String area,
+                          required String address,
+                          required String notes,
+                          required String mapsUrl,
+                        }) {
+                          setState(() {
+                            _deliveryLat = lat;
+                            _deliveryLng = lng;
+                            _selectedArea = area;
+                            _addressController.text = address;
+                            _deliveryNotes = notes;
+                            _mapsUrl = mapsUrl;
+                          });
+                        },
                       ),
                     ],
                   ] else ...[
@@ -497,9 +382,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                               // Simpan messenger reference SEBELUM async gap untuk hindari use_build_context_synchronously
                               final messenger = ScaffoldMessenger.of(context);
                               final cart = CartManager.instance;
-                              final mapsUrl = _isDelivery
-                                  ? 'https://www.google.com/maps?q=$_deliveryLat,$_deliveryLng'
-                                  : null;
+                              final mapsUrl = _isDelivery ? _mapsUrl : null;
 
                               final newOrder = OrderModel(
                                 id: _orderUuid,
@@ -513,7 +396,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                                 recipientPhone: _phoneController.text.trim(),
                                 deliveryAddress: _isDelivery ? _addressController.text.trim() : 'Pickup di Outlet Seuma Pusat Lhokseumawe',
                                 deliveryNotes: _isDelivery
-                                    ? 'Kecamatan $_selectedArea • GPS: $_deliveryLat, $_deliveryLng'
+                                    ? (_deliveryNotes.isNotEmpty ? _deliveryNotes : 'Kecamatan $_selectedArea • GPS: $_deliveryLat, $_deliveryLng')
                                     : 'Pesanan takeaway diambil sendiri di outlet',
                                 deliveryLat: _isDelivery ? _deliveryLat : 5.1801,
                                 deliveryLng: _isDelivery ? _deliveryLng : 97.1407,

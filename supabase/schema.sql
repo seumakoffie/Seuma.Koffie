@@ -448,6 +448,11 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 -- Profiles Policies (Bebas dari Rekursi RLS - Akses Penuh untuk Admin Dashboard)
 ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
 GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.orders TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.order_items TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.order_tracking_events TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.shift_schedules TO anon, authenticated, service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 
 DROP POLICY IF EXISTS "Profiles read policy" ON public.profiles;
 CREATE POLICY "Profiles read policy" ON public.profiles 
@@ -464,7 +469,7 @@ CREATE POLICY "Profiles update policy" ON public.profiles
 -- Orders Policies
 DROP POLICY IF EXISTS "Orders read policy" ON public.orders;
 CREATE POLICY "Orders read policy" ON public.orders 
-    FOR SELECT USING (auth.uid() = user_id OR public.is_staff_or_admin() OR auth.uid() IS NULL);
+    FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Orders insert policy" ON public.orders;
 CREATE POLICY "Orders insert policy" ON public.orders 
