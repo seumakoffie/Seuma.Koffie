@@ -4,22 +4,8 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import 'scroll_reveal.dart';
 
-class FooterV3 extends StatefulWidget {
+class FooterV3 extends StatelessWidget {
   const FooterV3({super.key});
-
-  @override
-  State<FooterV3> createState() => _FooterV3State();
-}
-
-class _FooterV3State extends State<FooterV3> {
-  final _emailController = TextEditingController();
-  bool _subscribed = false;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +14,6 @@ class _FooterV3State extends State<FooterV3> {
 
     return Column(
       children: [
-        // Newsletter Strip
-        ScrollReveal(
-          effect: RevealEffect.fadeUp,
-          child: _buildNewsletterStrip(isDesktop),
-        ),
-
         // Main Footer
         Container(
           color: const Color(0xFF0F0501),
@@ -54,115 +34,6 @@ class _FooterV3State extends State<FooterV3> {
         // Bottom Bar
         _buildBottomBar(),
       ],
-    );
-  }
-
-  Widget _buildNewsletterStrip(bool isDesktop) {
-    return Container(
-      color: AppColors.caramel,
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 40 : 20,
-        vertical: 32,
-      ),
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: isDesktop
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '🎁 Dapatkan Promo Eksklusif!',
-                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Daftar dan dapatkan voucher SEUMAFIRST senilai Rp 15.000 untuk pesanan pertamamu.',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 32),
-                    _buildEmailInput(width: 380),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('🎁 Dapatkan Promo Eksklusif!',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 8),
-                    Text('Daftar & dapatkan voucher Rp 15.000',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12.5)),
-                    const SizedBox(height: 16),
-                    _buildEmailInput(),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmailInput({double? width}) {
-    if (_subscribed) {
-      return Container(
-        width: width,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
-            SizedBox(width: 8),
-            Text('Berhasil! Kode dikirim ke email Anda.', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-          ],
-        ),
-      );
-    }
-    return SizedBox(
-      width: width,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _emailController,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Masukkan email kamu...',
-                hintStyle: const TextStyle(color: Colors.black45, fontSize: 13),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () => setState(() => _subscribed = true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.espresso,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            child: const Text('Daftar', style: TextStyle(fontWeight: FontWeight.w800)),
-          ),
-        ],
-      ),
     );
   }
 
