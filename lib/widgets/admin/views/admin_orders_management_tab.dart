@@ -58,6 +58,12 @@ class AdminOrdersManagementTab extends StatelessWidget {
                 isSelected: currentFilter == OrderStatus.delivered,
                 onTap: () => admin.setOrderFilter(OrderStatus.delivered),
               ),
+              const SizedBox(width: 8),
+              _buildFilterChip(
+                label: '❌ Dibatalkan (${admin.orders.where((o) => o.status == OrderStatus.cancelled).length})',
+                isSelected: currentFilter == OrderStatus.cancelled,
+                onTap: () => admin.setOrderFilter(OrderStatus.cancelled),
+              ),
             ],
           ),
         ),
@@ -175,34 +181,117 @@ class AdminOrdersManagementTab extends StatelessWidget {
               ),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: order.paymentStatus == 'paid' ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
+                  // Status Pembayaran (Bisa diklik untuk ubah Lunas / Belum Lunas)
+                  Tooltip(
+                    message: order.paymentStatus == 'paid' ? 'Status: LUNAS' : 'Klik untuk tandai LUNAS',
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${order.paymentMethod.displayName} • ${order.paymentStatus == 'paid' ? 'LUNAS' : 'BELUM DIBAYAR'}',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        color: order.paymentStatus == 'paid' ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                      onTap: () {
+                        final nextStatus = order.paymentStatus == 'paid' ? 'unpaid' : 'paid';
+                        _confirmPaymentStatus(context, admin, order, nextStatus);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: order.paymentStatus == 'paid' ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: order.paymentStatus == 'paid' ? const Color(0xFFA5D6A7) : const Color(0xFFFFCC80),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${order.paymentMethod.displayName} • ${order.paymentStatus == 'paid' ? 'LUNAS' : 'BELUM DIBAYAR'}',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: order.paymentStatus == 'paid' ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              order.paymentStatus == 'paid' ? Icons.check_circle : Icons.edit,
+                              size: 11,
+                              color: order.paymentStatus == 'paid' ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _statusBgColor(order.status),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${order.status.badgeEmoji} ${order.status.displayName}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: _statusTextColor(order.status),
+
+                  // Menu Dropdown Status Fleksibel
+                  PopupMenuButton<OrderStatus>(
+                    tooltip: 'Ubah status pesanan langsung',
+                    initialValue: order.status,
+                    onSelected: (newStatus) async {
+                      if (newStatus == order.status) return;
+                      if (newStatus == OrderStatus.delivered) {
+                        DeliveryVerificationModal.show(context, order);
+                        return;
+                      }
+                      if (newStatus == OrderStatus.cancelled) {
+                        _confirmCancelOrder(context, admin, order);
+                        return;
+                      }
+                      final ok = await admin.updateOrderStatus(order.id, newStatus);
+                      if (ok && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Status pesanan diubah ke: ${newStatus.badgeEmoji} ${newStatus.displayName}'),
+                            backgroundColor: const Color(0xFF2E7D32),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    },
+                    itemBuilder: (context) => OrderStatus.values.map((st) {
+                      return PopupMenuItem<OrderStatus>(
+                        value: st,
+                        child: Row(
+                          children: [
+                            Text(st.badgeEmoji, style: const TextStyle(fontSize: 14)),
+                            const SizedBox(width: 8),
+                            Text(
+                              st.displayName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: st == order.status ? FontWeight.w800 : FontWeight.w500,
+                                color: st == order.status ? AppColors.caramel : AppColors.textDark,
+                              ),
+                            ),
+                            if (st == order.status) ...[
+                              const Spacer(),
+                              const Icon(Icons.check, size: 16, color: AppColors.caramel),
+                            ],
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _statusBgColor(order.status),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: _statusTextColor(order.status).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${order.status.badgeEmoji} ${order.status.displayName}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: _statusTextColor(order.status),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(Icons.arrow_drop_down, size: 16, color: _statusTextColor(order.status)),
+                        ],
                       ),
                     ),
                   ),
@@ -239,7 +328,7 @@ class AdminOrdersManagementTab extends StatelessWidget {
                       order.deliveryAddress,
                       style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textDark),
                     ),
-                    if (order.deliveryNotes != null) ...[
+                    if (order.deliveryNotes != null && order.deliveryNotes!.trim().isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         'Patokan: ${order.deliveryNotes}',
@@ -308,26 +397,46 @@ class AdminOrdersManagementTab extends StatelessWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
-                        if (order.paymentMethod == PaymentMethod.cod)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade100,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.amber.shade400),
+                        if (order.paymentMethod == PaymentMethod.cod) ...[
+                          if (order.paymentStatus != 'paid')
+                            ElevatedButton.icon(
+                              onPressed: () => _confirmPaymentStatus(context, admin, order, 'paid'),
+                              icon: const Icon(Icons.payments_rounded, size: 13),
+                              label: Text(
+                                '💵 Terima COD: Rp ${order.totalAmount.toInt()}',
+                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE65100),
+                                foregroundColor: Colors.white,
+                                elevation: 1,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFA5D6A7)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF2E7D32)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '✅ LUNAS (COD Diterima)',
+                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF1B5E20)),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.payments_rounded, size: 12, color: Color(0xFFE65100)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '💵 Tagih COD: Rp ${order.totalAmount.toInt()}',
-                                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFFE65100)),
-                                ),
-                              ],
-                            ),
-                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -393,44 +502,134 @@ class AdminOrdersManagementTab extends StatelessWidget {
           const SizedBox(height: 14),
 
           // Action Progression Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               if (order.status == OrderStatus.pending) ...[
-                ElevatedButton.icon(
-                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.brewing),
-                  icon: const Icon(Icons.coffee, size: 16),
-                  label: const Text('Mulai Seduh (Barista)'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.espresso,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                OutlinedButton.icon(
+                  onPressed: () => _confirmCancelOrder(context, admin, order),
+                  icon: const Icon(Icons.cancel_outlined, size: 14, color: Color(0xFFC62828)),
+                  label: const Text('Batalkan', style: TextStyle(fontSize: 11.5, color: Color(0xFFC62828))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFEF9A9A)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-              ] else if (order.status == OrderStatus.brewing) ...[
-                ElevatedButton.icon(
+                OutlinedButton.icon(
                   onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.readyForDelivery),
-                  icon: const Icon(Icons.inventory_2_outlined, size: 16),
-                  label: const Text('Kemas & Siap Antar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF6C00),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  icon: const Icon(Icons.inventory_2_outlined, size: 15, color: Color(0xFFE65100)),
+                  label: const Text('📦 Siap Antar', style: TextStyle(fontSize: 11.5, color: Color(0xFFE65100), fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFF3E0),
+                    side: const BorderSide(color: Color(0xFFFFCC80)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-              ] else if (order.status == OrderStatus.readyForDelivery) ...[
                 ElevatedButton.icon(
                   onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.onDelivery),
-                  icon: const Icon(Icons.delivery_dining, size: 18),
-                  label: const Text('Kirim via Kurir Seuma'),
+                  icon: const Icon(Icons.delivery_dining, size: 16),
+                  label: const Text('🛵 Langsung Diantar', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0277BD),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.brewing),
+                  icon: const Icon(Icons.coffee, size: 16),
+                  label: const Text('☕ Mulai Seduh (Barista)'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.espresso,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ] else if (order.status == OrderStatus.brewing) ...[
+                OutlinedButton.icon(
+                  onPressed: () => _confirmCancelOrder(context, admin, order),
+                  icon: const Icon(Icons.cancel_outlined, size: 14, color: Color(0xFFC62828)),
+                  label: const Text('Batalkan', style: TextStyle(fontSize: 11.5, color: Color(0xFFC62828))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFEF9A9A)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.onDelivery),
+                  icon: const Icon(Icons.delivery_dining, size: 16),
+                  label: const Text('🛵 Langsung Kirim (Kurir)', style: TextStyle(fontSize: 11.5)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0277BD),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.readyForDelivery),
+                  icon: const Icon(Icons.inventory_2_outlined, size: 16),
+                  label: const Text('📦 Kemas & Siap Antar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF6C00),
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ] else if (order.status == OrderStatus.readyForDelivery) ...[
+                OutlinedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.brewing),
+                  icon: const Icon(Icons.undo, size: 14),
+                  label: const Text('☕ Balik ke Seduh', style: TextStyle(fontSize: 11.5)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.onDelivery),
+                  icon: const Icon(Icons.delivery_dining, size: 18),
+                  label: const Text('🛵 Kirim via Kurir Seuma'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0277BD),
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ] else if (order.status == OrderStatus.onDelivery) ...[
-                // TOMBOL UTAMA: VERIFIKASI PENGANTARAN LOKASI
+                OutlinedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.readyForDelivery),
+                  icon: const Icon(Icons.undo, size: 14),
+                  label: const Text('Balik Siap Antar', style: TextStyle(fontSize: 11.5)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.delivered),
+                  icon: const Icon(Icons.check_circle_outline, size: 16),
+                  label: const Text('✅ Tandai Selesai', style: TextStyle(fontSize: 11.5)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF388E3C),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
                 ElevatedButton.icon(
                   onPressed: () => DeliveryVerificationModal.show(context, order),
                   icon: const Icon(Icons.verified_user, size: 18),
@@ -445,6 +644,7 @@ class AdminOrdersManagementTab extends StatelessWidget {
                 ),
               ] else if (order.status == OrderStatus.delivered) ...[
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 18),
                     const SizedBox(width: 6),
@@ -464,12 +664,131 @@ class AdminOrdersManagementTab extends StatelessWidget {
                     ),
                   ],
                 ),
+              ] else if (order.status == OrderStatus.cancelled) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFEF9A9A)),
+                  ),
+                  child: const Text('❌ Pesanan Telah Dibatalkan', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFC62828))),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.pending),
+                  icon: const Icon(Icons.refresh, size: 14),
+                  label: const Text('Aktifkan Lagi (Menunggu)', style: TextStyle(fontSize: 11)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
               ],
             ],
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmPaymentStatus(BuildContext context, AdminManager admin, OrderModel order, String newStatus) async {
+    final isPaid = newStatus == 'paid';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(isPaid ? Icons.check_circle : Icons.warning_amber_rounded, color: isPaid ? const Color(0xFF2E7D32) : const Color(0xFFE65100)),
+            const SizedBox(width: 8),
+            Text(isPaid ? 'Konfirmasi Lunas' : 'Ubah ke Belum Lunas', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          isPaid
+              ? 'Tandai pembayaran pesanan ${order.orderNumber} (${order.paymentMethod.displayName}) sebesar Rp ${order.totalAmount.toInt()} sebagai LUNAS?'
+              : 'Kembalikan status pembayaran pesanan ${order.orderNumber} menjadi BELUM DIBAYAR?',
+          style: const TextStyle(fontSize: 13.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isPaid ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(isPaid ? 'Ya, Tandai Lunas' : 'Ya, Belum Lunas'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final ok = await admin.updatePaymentStatus(order.id, newStatus);
+      if (ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isPaid
+                ? '✅ Pembayaran pesanan ${order.orderNumber} berhasil ditandai LUNAS!'
+                : 'Status pembayaran ${order.orderNumber} diubah ke BELUM DIBAYAR.'),
+            backgroundColor: isPaid ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _confirmCancelOrder(BuildContext context, AdminManager admin, OrderModel order) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Color(0xFFC62828)),
+            SizedBox(width: 8),
+            Text('Batalkan Pesanan?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin membatalkan pesanan ${order.orderNumber} (${order.recipientName})?',
+          style: const TextStyle(fontSize: 13.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Kembali'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFC62828),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Ya, Batalkan Pesanan'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final ok = await admin.updateOrderStatus(order.id, OrderStatus.cancelled);
+      if (ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pesanan ${order.orderNumber} telah dibatalkan.'),
+            backgroundColor: const Color(0xFFC62828),
+          ),
+        );
+      }
+    }
   }
 
   Color _statusBgColor(OrderStatus status) {

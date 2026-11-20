@@ -128,6 +128,18 @@ class AdminManager extends ChangeNotifier {
     return success;
   }
 
+  Future<bool> updatePaymentStatus(String orderId, String newPaymentStatus) async {
+    final success = await SeumaSupabaseService.instance.updatePaymentStatus(orderId, newPaymentStatus);
+    if (success) {
+      final index = _orders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _orders[index] = _orders[index].copyWith(paymentStatus: newPaymentStatus);
+      }
+      notifyListeners();
+    }
+    return success;
+  }
+
   Future<bool> verifyDeliveryAtLocation({
     required String orderId,
     required String recipientName,

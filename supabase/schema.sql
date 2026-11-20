@@ -485,7 +485,7 @@ CREATE POLICY "Orders insert policy" ON public.orders
 
 DROP POLICY IF EXISTS "Orders update policy" ON public.orders;
 CREATE POLICY "Orders update policy" ON public.orders 
-    FOR UPDATE USING (public.is_staff_or_admin());
+    FOR UPDATE USING (true) WITH CHECK (true);
 
 -- Order Items Policies
 DROP POLICY IF EXISTS "Order items read policy" ON public.order_items;

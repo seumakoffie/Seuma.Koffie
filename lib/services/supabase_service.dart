@@ -329,6 +329,20 @@ class SeumaSupabaseService {
     }
   }
 
+  Future<bool> updatePaymentStatus(String orderId, String newPaymentStatus) async {
+    if (client == null) return false;
+    try {
+      await client!.from('orders').update({
+        'payment_status': newPaymentStatus,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', orderId);
+      return true;
+    } catch (e) {
+      debugPrint('Error updatePaymentStatus: $e');
+      return false;
+    }
+  }
+
   Future<bool> placeCustomerOrder(OrderModel order) async {
     _lastOrderError = null;
     if (client == null) {
