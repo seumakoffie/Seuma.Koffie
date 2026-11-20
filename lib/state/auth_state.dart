@@ -67,10 +67,10 @@ class AuthManager extends ChangeNotifier {
       final authUser = SeumaSupabaseService.instance.currentAuthUser;
       final effectiveEmail = email ?? authUser?.email;
       final profile = await SeumaSupabaseService.instance.getProfile(userId, email: effectiveEmail);
-      final isOwner = (profile?.email ?? effectiveEmail ?? '').toLowerCase().trim() == 'zarqud@gmail.com';
+      final isOwner = UserModel.isSuperAdminEmail(profile?.email ?? effectiveEmail);
 
       if (profile != null) {
-        if (isOwner && profile.role != UserRole.admin) {
+        if ((isOwner || profile.role == UserRole.admin) && profile.role != UserRole.admin) {
           _currentUser = profile.copyWith(role: UserRole.admin, memberTier: 'Super Admin');
         } else {
           _currentUser = profile;
@@ -79,8 +79,8 @@ class AuthManager extends ChangeNotifier {
       } else if (isOwner) {
         _currentUser = UserModel(
           id: userId,
-          name: authUser?.userMetadata?['name']?.toString() ?? 'Nazarul Qudri',
-          email: effectiveEmail ?? 'zarqud@gmail.com',
+          name: authUser?.userMetadata?['name']?.toString() ?? (effectiveEmail?.split('@').first ?? 'Admin Seuma'),
+          email: effectiveEmail ?? '',
           phone: '',
           role: UserRole.admin,
           memberTier: 'Super Admin',
@@ -161,9 +161,9 @@ class AuthManager extends ChangeNotifier {
           profile = await SeumaSupabaseService.instance.getProfile(user.id, email: user.email);
         }
 
-        final isOwner = (user.email ?? identifier).toLowerCase().trim() == 'zarqud@gmail.com';
-        final resolvedRole = isOwner ? UserRole.admin : (profile?.role ?? UserRole.customer);
-        final resolvedTier = isOwner ? 'Super Admin' : (profile?.memberTier ?? 'New Member');
+        final isOwner = UserModel.isSuperAdminEmail(user.email ?? identifier);
+        final resolvedRole = (isOwner || profile?.role == UserRole.admin) ? UserRole.admin : (profile?.role ?? UserRole.customer);
+        final resolvedTier = (isOwner || profile?.role == UserRole.admin) ? (profile?.memberTier.isNotEmpty == true && profile?.memberTier != 'New Member' ? profile!.memberTier : 'Super Admin') : (profile?.memberTier ?? 'New Member');
 
         _currentUser = profile?.copyWith(role: resolvedRole, memberTier: resolvedTier) ?? UserModel(
           id: user.id,
@@ -256,10 +256,10 @@ class AuthManager extends ChangeNotifier {
     notifyListeners();
     try {
       final profile = await SeumaSupabaseService.instance.getProfile(authUser.id, email: authUser.email);
-      final isOwner = (authUser.email ?? _currentUser?.email ?? '').toLowerCase().trim() == 'zarqud@gmail.com';
+      final isOwner = UserModel.isSuperAdminEmail(authUser.email ?? _currentUser?.email);
       if (profile != null) {
-        if (isOwner) {
-          _currentUser = profile.copyWith(role: UserRole.admin, memberTier: 'Super Admin');
+        if (isOwner || profile.role == UserRole.admin) {
+          _currentUser = profile.copyWith(role: UserRole.admin, memberTier: profile.memberTier == 'New Member' ? 'Super Admin' : profile.memberTier);
         } else {
           _currentUser = profile;
         }
@@ -267,7 +267,7 @@ class AuthManager extends ChangeNotifier {
       } else if (isOwner) {
         _currentUser = (_currentUser ?? UserModel(
           id: authUser.id,
-          name: 'Nazarul Qudri',
+          name: authUser.userMetadata?['name']?.toString() ?? (authUser.email?.split('@').first ?? 'Admin Seuma'),
           email: authUser.email!,
           phone: '',
         )).copyWith(role: UserRole.admin, memberTier: 'Super Admin');

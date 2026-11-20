@@ -69,7 +69,17 @@ class UserModel {
     this.createdAt,
   });
 
-  bool get isAdmin => role == UserRole.admin || email.toLowerCase().trim() == 'zarqud@gmail.com';
+  static const Set<String> superAdminEmails = {
+    'zarqud@gmail.com',
+    'seumakoffie20@gmail.com',
+  };
+
+  static bool isSuperAdminEmail(String? email) {
+    if (email == null) return false;
+    return superAdminEmails.contains(email.toLowerCase().trim());
+  }
+
+  bool get isAdmin => role == UserRole.admin || isSuperAdminEmail(email);
   bool get isShift => role == UserRole.shift;
   bool get isCustomer => !isAdmin && !isShift;
   bool get hasStaffAccess => isAdmin || isShift;

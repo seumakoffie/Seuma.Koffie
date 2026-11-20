@@ -565,12 +565,12 @@ ON CONFLICT (id) DO UPDATE SET
 UPDATE public.profiles 
 SET role = 'admin', 
     member_tier = 'Super Admin' 
-WHERE email = 'zarqud@gmail.com';
+WHERE email IN ('zarqud@gmail.com', 'seumakoffie20@gmail.com');
 
--- Verifikasi data profil akun admin
+-- Verifikasi data profil seluruh akun admin
 SELECT id, name, email, role, member_tier 
 FROM public.profiles 
-WHERE email = 'zarqud@gmail.com';
+WHERE role = 'admin' OR email IN ('zarqud@gmail.com', 'seumakoffie20@gmail.com');
 
 -- ============================================================================
 -- SELESAI. Database Seuma.Koffie 100% Terintegrasi, Realtime & Blockchain Ready!
