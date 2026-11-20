@@ -17,9 +17,7 @@ class NavbarLogo extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                gradient: AppColors.caramelGradient,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
@@ -29,7 +27,22 @@ class NavbarLogo extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(Icons.coffee_rounded, color: Colors.white, size: 18),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'lib/gambarlogo/logo.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: const BoxDecoration(
+                      gradient: AppColors.caramelGradient,
+                    ),
+                    child: const Icon(Icons.coffee_rounded, color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             RichText(

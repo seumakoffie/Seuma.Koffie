@@ -103,14 +103,23 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: AppColors.espresso,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(color: AppColors.espresso.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4)),
                             ],
                           ),
-                          child: const Center(
-                            child: Text('☕', style: TextStyle(fontSize: 24)),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.asset(
+                              'lib/gambarlogo/logo.png',
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                color: AppColors.espresso,
+                                child: const Center(child: Text('☕', style: TextStyle(fontSize: 24))),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 14),
