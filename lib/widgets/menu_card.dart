@@ -44,12 +44,37 @@ class _MenuCardState extends State<MenuCard> {
     }
   }
 
+  List<Color> _getCategoryGradient(String slug) {
+    switch (slug) {
+      case 'matcha':
+        return [const Color(0xFF1B5E20), const Color(0xFF4CAF50), const Color(0xFFA5D6A7)];
+      case 'taro':
+      case 'velvet':
+        return [const Color(0xFF4A148C), const Color(0xFF9C27B0), const Color(0xFFCE93D8)];
+      case 'squash':
+        return [const Color(0xFFBF360C), const Color(0xFFFF7043), const Color(0xFFFFCCBC)];
+      case 'sanger':
+      case 'espresso':
+        return [const Color(0xFF1A0A00), const Color(0xFF4E342E), const Color(0xFFA1887F)];
+      case 'americano':
+        return [const Color(0xFF2D1B10), const Color(0xFF5D4037), const Color(0xFFBCAAA4)];
+      case 'susu':
+      case 'latte':
+        return [const Color(0xFF4E342E), const Color(0xFF8D6E63), const Color(0xFFD7CCC8)];
+      case 'saku':
+        return [const Color(0xFF8B5E00), const Color(0xFFD48B38), const Color(0xFFFFE0B2)];
+      default:
+        return [const Color(0xFF6B3A1F), AppColors.caramel, const Color(0xFFFFE0B2)];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
     final hasHot = item.priceHot != null;
     final hasIce = item.priceIce != null;
     final themeColor = _getCategoryThemeColor(item.categorySlug);
+    final gradientColors = _getCategoryGradient(item.categorySlug);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -60,201 +85,185 @@ class _MenuCardState extends State<MenuCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.translationValues(0.0, _isHovered ? -5.0 : 0.0, 0.0),
+          transform: Matrix4.translationValues(0.0, _isHovered ? -6.0 : 0.0, 0.0),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: _isHovered
-                  ? AppColors.caramel.withValues(alpha: 0.5)
+                  ? themeColor.withValues(alpha: 0.55)
                   : AppColors.caramel.withValues(alpha: 0.12),
               width: _isHovered ? 1.5 : 1.0,
             ),
-            boxShadow: _isHovered ? AppColors.hoverShadow : AppColors.softShadow,
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: themeColor.withValues(alpha: 0.28),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                    BoxShadow(
+                      color: themeColor.withValues(alpha: 0.10),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : AppColors.softShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Banner / Thumbnail Area with Themed Ambient Stage
+              // ── HERO IMAGE STAGE ──────────────────────────────────────
               Stack(
                 children: [
-                  Container(
-                    height: 125,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          themeColor.withValues(alpha: 0.12),
-                          AppColors.creamLight,
-                          Colors.white,
-                        ],
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.0, 0.55, 1.0],
+                          colors: [
+                            gradientColors[0],
+                            gradientColors[1],
+                            gradientColors[2],
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Soft Ambient Backlight Halo
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          width: _isHovered ? 85 : 70,
-                          height: _isHovered ? 85 : 70,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // ── Concentric Glow Rings (ambient halo) ──
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 350),
+                            width: _isHovered ? 160 : 130,
+                            height: _isHovered ? 160 : 130,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.10),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 400),
+                            width: _isHovered ? 110 : 90,
+                            height: _isHovered ? 110 : 90,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withValues(alpha: _isHovered ? 0.25 : 0.14),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+
+                      // ── Elliptical "table surface" shadow under drink ──
+                      Positioned(
+                        bottom: 14,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 280),
+                          width: _isHovered ? 110 : 90,
+                          height: _isHovered ? 18 : 14,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: themeColor.withValues(alpha: _isHovered ? 0.22 : 0.12),
+                            borderRadius: BorderRadius.circular(50),
                             boxShadow: [
                               BoxShadow(
-                                color: themeColor.withValues(alpha: _isHovered ? 0.35 : 0.15),
-                                blurRadius: 18,
+                                color: Colors.black.withValues(alpha: _isHovered ? 0.38 : 0.28),
+                                blurRadius: _isHovered ? 20 : 14,
+                                spreadRadius: _isHovered ? 2 : 0,
                               ),
                             ],
                           ),
                         ),
+                      ),
 
-                        // Animated Drink Visual (Foto Menu atau Emoji)
-                        AnimatedScale(
-                          duration: const Duration(milliseconds: 220),
-                          scale: _isHovered ? 1.08 : 1.0,
-                          child: item.hasImage
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Image.asset(
+                      // ── Floating Drink Image ──
+                      Positioned(
+                        bottom: 20,
+                        child: AnimatedScale(
+                          duration: const Duration(milliseconds: 250),
+                          scale: _isHovered ? 1.12 : 1.0,
+                          curve: Curves.easeOutBack,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 280),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                // Primary depth shadow
+                                BoxShadow(
+                                  color: gradientColors[0].withValues(alpha: _isHovered ? 0.65 : 0.45),
+                                  blurRadius: _isHovered ? 28 : 18,
+                                  offset: const Offset(0, 10),
+                                  spreadRadius: -2,
+                                ),
+                                // Secondary soft glow
+                                BoxShadow(
+                                  color: Colors.white.withValues(alpha: _isHovered ? 0.20 : 0.10),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, -2),
+                                ),
+                              ],
+                            ),
+                            child: item.hasImage
+                                ? Image.asset(
                                     item.resolvedImagePath!,
-                                    width: 95,
-                                    height: 95,
+                                    width: 140,
+                                    height: 140,
                                     fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => Text(
+                                    errorBuilder: (_, _, _) => Text(
                                       item.iconEmoji,
-                                      style: const TextStyle(fontSize: 48),
+                                      style: const TextStyle(fontSize: 72),
                                     ),
+                                  )
+                                : Text(
+                                    item.iconEmoji,
+                                    style: const TextStyle(fontSize: 72),
                                   ),
-                                )
-                              : Text(
-                                  item.iconEmoji,
-                                  style: const TextStyle(fontSize: 48),
-                                ),
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  // Top Left Badges (Best Seller / New / Official)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (item.isBestSeller)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                            margin: const EdgeInsets.only(bottom: 4),
-                            decoration: BoxDecoration(
-                              gradient: AppColors.caramelGradient,
-                              borderRadius: BorderRadius.circular(6),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.caramel.withValues(alpha: 0.35),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.local_fire_department, size: 10, color: Colors.white),
-                                SizedBox(width: 3),
-                                Text(
-                                  'TERLARIS',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                      // ── Light streak (top-left highlight for 3D feel) ──
+                      Positioned(
+                        top: 10,
+                        left: 18,
+                        child: Container(
+                          width: 60,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0.55),
+                                Colors.transparent,
                               ],
                             ),
                           ),
-                        if (item.isNew)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.teal.shade700,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'BARU',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+              ),
 
-                  // Top Right Thermal Badges (Hot / Ice)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (hasHot)
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            margin: const EdgeInsets.only(right: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.08),
-                                  blurRadius: 3,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.local_fire_department_rounded,
-                              size: 11,
-                              color: Colors.deepOrange,
-                            ),
-                          ),
-                        if (hasIce)
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.08),
-                                  blurRadius: 3,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.ac_unit_rounded,
-                              size: 11,
-                              color: Colors.lightBlue.shade600,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+              // ── Badges overlay di atas ClipRRect ──
+              _buildBadgesOverlay(item, hasHot, hasIce),
                 ],
               ),
 
-              // Bottom Details
+              // ── BOTTOM DETAILS ───────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -265,7 +274,7 @@ class _MenuCardState extends State<MenuCard> {
                         Text(
                           item.category.toUpperCase(),
                           style: TextStyle(
-                            color: AppColors.caramel.withValues(alpha: 0.9),
+                            color: themeColor.withValues(alpha: 0.9),
                             fontSize: 9.5,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
@@ -319,7 +328,7 @@ class _MenuCardState extends State<MenuCard> {
 
                     const SizedBox(height: 8),
 
-                    // Volume Sold Indicator (Social proof marketplace)
+                    // Volume Sold Indicator
                     Text(
                       '1.2k+ terjual di Lhokseumawe',
                       style: TextStyle(
@@ -357,20 +366,21 @@ class _MenuCardState extends State<MenuCard> {
                           ],
                         ),
 
-                        // Plus Add Button with ripple
-                        Container(
-                          width: 32,
-                          height: 32,
+                        // Plus Add Button
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 34,
+                          height: 34,
                           decoration: BoxDecoration(
                             gradient: _isHovered ? AppColors.caramelGradient : null,
-                            color: _isHovered ? null : AppColors.caramel.withValues(alpha: 0.12),
+                            color: _isHovered ? null : themeColor.withValues(alpha: 0.14),
                             shape: BoxShape.circle,
                             boxShadow: _isHovered
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.caramel.withValues(alpha: 0.4),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
+                                      color: AppColors.caramel.withValues(alpha: 0.45),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
                                     )
                                   ]
                                 : null,
@@ -378,7 +388,7 @@ class _MenuCardState extends State<MenuCard> {
                           child: Icon(
                             Icons.add_shopping_cart_rounded,
                             size: 16,
-                            color: _isHovered ? Colors.white : AppColors.caramel,
+                            color: _isHovered ? Colors.white : themeColor,
                           ),
                         ),
                       ],
@@ -388,6 +398,131 @@ class _MenuCardState extends State<MenuCard> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── Badges row helper (Best Seller, New, Hot, Ice) ──
+  Widget _buildBadgesOverlay(MenuItem item, bool hasHot, bool hasIce) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left badges
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (item.isBestSeller)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    margin: const EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.caramelGradient,
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.caramel.withValues(alpha: 0.4),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.local_fire_department, size: 10, color: Colors.white),
+                        SizedBox(width: 3),
+                        Text(
+                          'TERLARIS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (item.isNew)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade600,
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.teal.withValues(alpha: 0.4),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'BARU',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // Right thermal badges
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasHot)
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    margin: const EdgeInsets.only(right: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 11,
+                      color: Colors.deepOrange,
+                    ),
+                  ),
+                if (hasIce)
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.ac_unit_rounded,
+                      size: 11,
+                      color: Colors.lightBlue.shade600,
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -342,7 +342,7 @@ class _StoryAndQuizSectionState extends State<StoryAndQuizSection>
                                         width: 32,
                                         height: 32,
                                         fit: BoxFit.contain,
-                                        errorBuilder: (_, __, ___) => Text(item.iconEmoji, style: const TextStyle(fontSize: 26)),
+                                        errorBuilder: (_, _, _) => Text(item.iconEmoji, style: const TextStyle(fontSize: 26)),
                                       ),
                                     )
                                   : Text(item.iconEmoji, style: const TextStyle(fontSize: 26)),

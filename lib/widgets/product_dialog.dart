@@ -122,7 +122,7 @@ class _ProductDialogState extends State<ProductDialog> {
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => Text(
+                                errorBuilder: (_, _, _) => Text(
                                   item.iconEmoji,
                                   style: const TextStyle(fontSize: 28),
                                 ),

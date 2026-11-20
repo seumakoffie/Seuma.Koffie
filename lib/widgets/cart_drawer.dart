@@ -187,7 +187,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                             width: 38,
                                             height: 38,
                                             fit: BoxFit.contain,
-                                            errorBuilder: (_, __, ___) => Text(item.iconEmoji, style: const TextStyle(fontSize: 22)),
+                                            errorBuilder: (_, _, _) => Text(item.iconEmoji, style: const TextStyle(fontSize: 22)),
                                           ),
                                         )
                                       : Text(item.iconEmoji, style: const TextStyle(fontSize: 22)),

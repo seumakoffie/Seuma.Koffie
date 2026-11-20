@@ -232,7 +232,7 @@ class _FlashDealsSectionState extends State<FlashDealsSection> {
                           width: 60,
                           height: 60,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => Text(
+                          errorBuilder: (_, _, _) => Text(
                             item.iconEmoji,
                             style: const TextStyle(fontSize: 36),
                           ),
