@@ -71,6 +71,7 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS recipient_phone TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_notes TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS maps_url TEXT;
+ALTER TABLE public.orders ALTER COLUMN user_id DROP NOT NULL;
 
 -- Pastikan seluruh kolom esensial ada jika tabel sudah pernah dibuat sebelumnya
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
@@ -137,6 +138,7 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS recipient_phone TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_notes TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS maps_url TEXT;
+ALTER TABLE public.orders ALTER COLUMN user_id DROP NOT NULL;
 
 -- ============================================================================
 -- 6. TABEL ITEM PESANAN (ORDER ITEMS)
