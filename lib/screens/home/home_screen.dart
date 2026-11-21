@@ -33,13 +33,22 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _aboutSectionKey = GlobalKey();
   final GlobalKey _footerSectionKey = GlobalKey();
   static bool _hasShownWelcomeDialog = false;
+  bool _isScrolled = false;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onHomeScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndShowWelcomePrompt();
     });
+  }
+
+  void _onHomeScroll() {
+    final scrolled = _scrollController.offset > 20;
+    if (scrolled != _isScrolled) {
+      setState(() => _isScrolled = scrolled);
+    }
   }
 
   void _checkAndShowWelcomePrompt() {
@@ -87,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onHomeScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -172,9 +182,11 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
 
-          // ── CORPORATE NAVBAR (Overlaid on top) ───────────────────────────
-          Positioned(
-            top: 27, // below notification bar
+          // ── CORPORATE NAVBAR (Overlaid on top, Smooth Floating Docking) ──
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            top: _isScrolled ? 0 : 27, // smooth docking when scrolled
             left: 0,
             right: 0,
             child: CorporateNavbar(

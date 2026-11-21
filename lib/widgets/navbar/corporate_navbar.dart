@@ -13,6 +13,7 @@ import 'mobile/navbar_mobile_drawer.dart';
 import 'mega_menu/mega_menu_container.dart';
 import '../../state/auth_state.dart';
 import '../admin/admin_dashboard_dialog.dart';
+import '../customer/customer_order_history_dialog.dart';
 
 class CorporateNavbar extends StatefulWidget {
   final VoidCallback onOrderNow;
@@ -122,37 +123,49 @@ class _CorporateNavbarState extends State<CorporateNavbar>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Main Top Bar ─────────────────────────────────────────────────
+        // ── Main Top Bar (Floating Glassmorphism International Standard) ──
         AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
+          margin: _isScrolled
+              ? EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 32 : (screenWidth > 600 ? 20 : 10),
+                  vertical: isDesktop ? 10 : 6,
+                )
+              : EdgeInsets.zero,
           decoration: BoxDecoration(
             color: _isScrolled
-                ? const Color(0xFF130602).withValues(alpha: 0.96)
+                ? const Color(0xFF140702).withValues(alpha: 0.94)
                 : const Color(0xFF1A0A04).withValues(alpha: 0.90),
-            border: Border(
-              bottom: BorderSide(
-                color: _isScrolled
-                    ? AppColors.gold.withValues(alpha: 0.35)
-                    : AppColors.gold.withValues(alpha: 0.20),
-                width: 1.2,
-              ),
-            ),
+            borderRadius: BorderRadius.circular(_isScrolled ? (isDesktop ? 22 : 18) : 0),
+            border: _isScrolled
+                ? Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.35),
+                    width: 1.2,
+                  )
+                : Border(
+                    bottom: BorderSide(
+                      color: AppColors.gold.withValues(alpha: 0.20),
+                      width: 1.2,
+                    ),
+                  ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: _isScrolled ? 0.45 : 0.25),
-                blurRadius: _isScrolled ? 20 : 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: _isScrolled ? 0.55 : 0.25),
+                blurRadius: _isScrolled ? 24 : 12,
+                offset: Offset(0, _isScrolled ? 8 : 4),
+                spreadRadius: _isScrolled ? 1 : 0,
               ),
             ],
           ),
-          child: ClipRect(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(_isScrolled ? (isDesktop ? 22 : 18) : 0),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
-                height: 64,
+                height: _isScrolled ? (isDesktop ? 60 : 56) : 64,
                 padding: EdgeInsets.symmetric(
-                  horizontal: isDesktop ? 36 : 16,
+                  horizontal: isDesktop ? (_isScrolled ? 24 : 36) : (_isScrolled ? 12 : 16),
                 ),
                 child: isDesktop
                     ? _buildDesktopNav(context)
@@ -279,6 +292,33 @@ class _CorporateNavbarState extends State<CorporateNavbar>
       children: [
         NavbarLogo(onScrollToTop: widget.onScrollToTop),
         const Spacer(),
+        // Tombol Akses Cepat Riwayat & Lacak Pesanan
+        Tooltip(
+          message: 'Pesanan & Riwayat Saya',
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => CustomerOrderHistoryDialog.show(context),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.receipt_long_rounded,
+                  color: AppColors.gold,
+                  size: 19,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
         NavbarCartButton(onShowCart: widget.onShowCart),
         const SizedBox(width: 8),
         IconButton(

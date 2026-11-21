@@ -219,6 +219,9 @@ class _MenuCardState extends State<MenuCard> {
                                     item.resolvedImagePath!,
                                     width: 140,
                                     height: 140,
+                                    cacheWidth: 280,
+                                    cacheHeight: 280,
+                                    filterQuality: FilterQuality.medium,
                                     fit: BoxFit.contain,
                                     errorBuilder: (_, _, _) => Text(
                                       item.iconEmoji,

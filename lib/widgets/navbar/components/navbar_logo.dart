@@ -30,16 +30,26 @@ class NavbarLogo extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Image.asset(
-                  'lib/gambarlogo/logo.png',
+                  'lib/gambarlogo/logo_web.png',
                   width: 32,
                   height: 32,
+                  cacheWidth: 96,
+                  cacheHeight: 96,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.caramelGradient,
+                  errorBuilder: (_, _, _) => Image.asset(
+                    'lib/gambarlogo/logo.png',
+                    width: 32,
+                    height: 32,
+                    cacheWidth: 96,
+                    cacheHeight: 96,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.caramelGradient,
+                      ),
+                      child: const Icon(Icons.coffee_rounded, color: Colors.white, size: 18),
                     ),
-                    child: const Icon(Icons.coffee_rounded, color: Colors.white, size: 18),
                   ),
                 ),
               ),

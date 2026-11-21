@@ -121,6 +121,9 @@ class _ProductDialogState extends State<ProductDialog> {
                                 item.resolvedImagePath!,
                                 width: 50,
                                 height: 50,
+                                cacheWidth: 150,
+                                cacheHeight: 150,
+                                filterQuality: FilterQuality.medium,
                                 fit: BoxFit.contain,
                                 errorBuilder: (_, _, _) => Text(
                                   item.iconEmoji,

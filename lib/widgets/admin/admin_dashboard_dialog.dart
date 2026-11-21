@@ -111,13 +111,23 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(16),
                             child: Image.asset(
-                              'lib/gambarlogo/logo.png',
+                              'lib/gambarlogo/logo_web.png',
                               width: 48,
                               height: 48,
+                              cacheWidth: 144,
+                              cacheHeight: 144,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(
-                                color: AppColors.espresso,
-                                child: const Center(child: Text('☕', style: TextStyle(fontSize: 24))),
+                              errorBuilder: (_, _, _) => Image.asset(
+                                'lib/gambarlogo/logo.png',
+                                width: 48,
+                                height: 48,
+                                cacheWidth: 144,
+                                cacheHeight: 144,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Container(
+                                  color: AppColors.espresso,
+                                  child: const Center(child: Text('☕', style: TextStyle(fontSize: 24))),
+                                ),
                               ),
                             ),
                           ),

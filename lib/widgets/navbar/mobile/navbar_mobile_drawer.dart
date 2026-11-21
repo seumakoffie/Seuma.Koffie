@@ -5,6 +5,7 @@ import '../../../theme/app_theme.dart';
 import '../../../state/auth_state.dart';
 import '../components/navbar_logo.dart';
 import '../../admin/admin_dashboard_dialog.dart';
+import '../../customer/customer_order_history_dialog.dart';
 
 class NavbarMobileDrawer {
   static void show(
@@ -201,6 +202,16 @@ class NavbarMobileDrawer {
                             ),
 
                             // ── Navigation List Items ────────────────────
+                            _buildDrawerTile(
+                              icon: Icons.receipt_long_rounded,
+                              label: 'Pesanan & Riwayat Saya',
+                              badge: 'Lacak Live',
+                              badgeColor: const Color(0xFF2E7D32),
+                              onTap: () {
+                                Navigator.pop(context);
+                                CustomerOrderHistoryDialog.show(context);
+                              },
+                            ),
                             _buildDrawerTile(
                               icon: Icons.coffee_rounded,
                               label: 'Daftar Menu Favorit',
