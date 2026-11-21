@@ -87,6 +87,8 @@ class SeumaSupabaseService {
   void subscribeToRealtimeChanges({
     required VoidCallback onOrdersUpdated,
     required VoidCallback onBlockchainUpdated,
+    void Function(Map<String, dynamic> newOrder)? onNewOrderReceived,
+    void Function(Map<String, dynamic> newProfile)? onNewCustomerRegistered,
   }) {
     if (!_isInitialized || client == null) return;
     try {
@@ -100,7 +102,21 @@ class SeumaSupabaseService {
           table: 'orders',
           callback: (payload) {
             debugPrint('⚡ Realtime event on orders: ${payload.eventType}');
+            if (payload.eventType == PostgresChangeEvent.insert && onNewOrderReceived != null) {
+              onNewOrderReceived(payload.newRecord);
+            }
             onOrdersUpdated();
+          },
+        )
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'profiles',
+          callback: (payload) {
+            debugPrint('⚡ Realtime event on profiles: ${payload.eventType}');
+            if (payload.eventType == PostgresChangeEvent.insert && onNewCustomerRegistered != null) {
+              onNewCustomerRegistered(payload.newRecord);
+            }
           },
         )
         ..onPostgresChanges(

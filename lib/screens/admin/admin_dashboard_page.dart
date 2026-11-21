@@ -12,6 +12,7 @@ import '../../widgets/admin/views/admin_shift_keeper_tab.dart';
 import '../../widgets/admin/views/admin_orders_management_tab.dart';
 import '../../widgets/admin/views/admin_menu_management_tab.dart';
 import '../../widgets/admin/views/blockchain_audit_view.dart';
+import '../../services/sound_notification_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -53,11 +54,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
   Widget build(BuildContext context) {
     final auth = AuthManager.instance;
     final admin = AdminManager.instance;
+    final sound = SoundNotificationService.instance;
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 980;
 
     return ListenableBuilder(
-      listenable: Listenable.merge([auth, admin]),
+      listenable: Listenable.merge([auth, admin, sound]),
       builder: (context, _) {
         final currentUser = auth.currentUser;
         final currentRole = currentUser?.effectiveRole ?? UserRole.admin;
@@ -194,6 +196,58 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
 
               const SizedBox(width: 8),
 
+              // Tombol Uji Efek Suara
+              IconButton(
+                tooltip: 'Uji Efek Suara Lonceng',
+                icon: const Icon(Icons.volume_up_rounded, color: AppColors.gold, size: 20),
+                onPressed: () {
+                  sound.playTestSound();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Text('🔊 Uji coba audio: Lonceng notifikasi berbunyi normal.'),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF2E7D32),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
+              ),
+
+              // Tombol Saklar Lonceng Suara (Mute/Unmute)
+              IconButton(
+                tooltip: sound.isSoundEnabled
+                    ? 'Suara Notifikasi Aktif (Klik untuk Bisukan)'
+                    : 'Suara Notifikasi Dibisukan (Klik untuk Aktifkan)',
+                icon: Icon(
+                  sound.isSoundEnabled ? Icons.notifications_active_rounded : Icons.notifications_off_rounded,
+                  color: sound.isSoundEnabled ? const Color(0xFF81C784) : Colors.grey.shade400,
+                  size: 21,
+                ),
+                onPressed: () {
+                  sound.toggleSound();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        sound.isSoundEnabled
+                            ? '🔔 Efek Suara Notifikasi Diaktifkan'
+                            : '🔕 Efek Suara Notifikasi Dibisukan',
+                      ),
+                      backgroundColor: sound.isSoundEnabled ? const Color(0xFF2E7D32) : const Color(0xFF616161),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
+              ),
+
               // Tombol Buka Tab Baru
               IconButton(
                 tooltip: 'Buka di Tab Baru Browser',
@@ -216,6 +270,49 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Banner Notifikasi Event Realtime Terkini (jika ada)
+                if (admin.latestAlertMessage != null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFB74D), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.campaign_rounded, color: Color(0xFFE65100), size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            admin.latestAlertMessage!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFBF360C),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16, color: Color(0xFFBF360C)),
+                          onPressed: () => admin.clearAlertMessage(),
+                          tooltip: 'Tutup Banner',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 // Navigation Tab Bar
                 Container(
                   decoration: BoxDecoration(

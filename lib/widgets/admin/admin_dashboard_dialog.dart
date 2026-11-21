@@ -11,6 +11,7 @@ import 'views/admin_shift_keeper_tab.dart';
 import 'views/admin_orders_management_tab.dart';
 import 'views/blockchain_audit_view.dart';
 import 'views/admin_menu_management_tab.dart';
+import '../../services/sound_notification_service.dart';
 
 class AdminDashboardDialog extends StatefulWidget {
   const AdminDashboardDialog({super.key});
@@ -228,6 +229,26 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
                           onPressed: () {
                             final baseUrl = Uri.base.toString().split('#')[0];
                             launchUrl(Uri.parse('$baseUrl#/admin'), mode: LaunchMode.externalApplication);
+                          },
+                        ),
+
+                        // Sound Toggle Button
+                        IconButton(
+                          tooltip: SoundNotificationService.instance.isSoundEnabled
+                              ? 'Suara Notifikasi Aktif'
+                              : 'Suara Notifikasi Dibisukan',
+                          icon: Icon(
+                            SoundNotificationService.instance.isSoundEnabled
+                                ? Icons.notifications_active_rounded
+                                : Icons.notifications_off_rounded,
+                            color: SoundNotificationService.instance.isSoundEnabled
+                                ? const Color(0xFF2E7D32)
+                                : Colors.grey.shade400,
+                            size: 21,
+                          ),
+                          onPressed: () {
+                            SoundNotificationService.instance.toggleSound();
+                            setState(() {});
                           },
                         ),
 

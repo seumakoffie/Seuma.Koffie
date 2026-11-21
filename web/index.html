@@ -29,6 +29,96 @@
   <!-- Cloudflare Turnstile Integration Script -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
+  <!-- Seuma.Koffie Realtime Web Audio Notification Synthesizer -->
+  <script>
+    (function() {
+      var audioCtx = null;
+      function getAudioContext() {
+        if (!audioCtx) {
+          var AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) audioCtx = new AudioCtx();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      // Otomatis unlock AudioContext saat admin berinteraksi
+      document.addEventListener('click', function() {
+        getAudioContext();
+      }, { once: false });
+
+      window.seumaPlaySound = function(type) {
+        try {
+          var ctx = getAudioContext();
+          if (!ctx) return;
+
+          var now = ctx.currentTime;
+          if (type === 'order') {
+            // Cash Register Double Chime (E6 -> C7)
+            var osc1 = ctx.createOscillator();
+            var osc2 = ctx.createOscillator();
+            var gain = ctx.createGain();
+
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(1318.51, now); // E6
+            osc1.frequency.exponentialRampToValueAtTime(1350, now + 0.15);
+
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(2093.00, now + 0.12); // C7
+            osc2.frequency.exponentialRampToValueAtTime(2150, now + 0.35);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.35, now + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc1.start(now);
+            osc1.stop(now + 0.25);
+            osc2.start(now + 0.12);
+            osc2.stop(now + 0.6);
+          } else if (type === 'signup') {
+            // Warm Welcome Chime (A5 -> E6)
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880.00, now); // A5
+            osc.frequency.setValueAtTime(1318.51, now + 0.15); // E6
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.28, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.5);
+          } else {
+            // Test tone (C6)
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1046.50, now);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.3);
+          }
+        } catch (e) {
+          console.warn('Seuma audio synthesis error:', e);
+        }
+      };
+    })();
+  </script>
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">

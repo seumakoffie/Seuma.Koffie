@@ -6,6 +6,7 @@ import '../models/order_model.dart';
 import '../models/shift_schedule_model.dart';
 import '../models/blockchain_block_model.dart';
 import '../services/supabase_service.dart';
+import '../services/sound_notification_service.dart';
 
 class AdminManager extends ChangeNotifier {
   static final AdminManager instance = AdminManager._internal();
@@ -16,6 +17,14 @@ class AdminManager extends ChangeNotifier {
 
   String? _lastOrderError;
   String? get lastOrderError => _lastOrderError;
+
+  String? _latestAlertMessage;
+  String? get latestAlertMessage => _latestAlertMessage;
+
+  void clearAlertMessage() {
+    _latestAlertMessage = null;
+    notifyListeners();
+  }
 
   List<UserModel> _consumers = [];
   List<UserModel> get consumers => _consumers;
@@ -127,6 +136,23 @@ class AdminManager extends ChangeNotifier {
             _blockchainStatus = status;
             notifyListeners();
           }).catchError((_) {});
+        },
+        onNewOrderReceived: (orderData) {
+          final orderNum = orderData['order_number']?.toString() ?? 'Baru';
+          final amount = orderData['total_amount'] as int? ?? 0;
+          SoundNotificationService.instance.playNewOrderAlert(orderNumber: orderNum, amount: amount);
+          _latestAlertMessage = '🔔 Pesanan Baru Masuk: $orderNum (Rp $amount)';
+          notifyListeners();
+        },
+        onNewCustomerRegistered: (profileData) {
+          final name = profileData['name']?.toString() ?? profileData['email']?.toString() ?? 'Konsumen Baru';
+          SoundNotificationService.instance.playNewCustomerAlert(customerName: name);
+          _latestAlertMessage = '👤 Konsumen Baru Bergabung: $name';
+          s.fetchConsumers().then((list) {
+            _consumers = list;
+            notifyListeners();
+          }).catchError((_) {});
+          notifyListeners();
         },
       );
     } catch (e) {
