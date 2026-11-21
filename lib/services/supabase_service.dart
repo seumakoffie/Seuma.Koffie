@@ -516,13 +516,21 @@ class SeumaSupabaseService {
       };
     }
     try {
-      final res = await client!.rpc('verify_blockchain_integrity');
+      dynamic res;
+      try {
+        res = await client!.rpc('verify_blockchain_integrity');
+      } catch (_) {
+        try {
+          res = await client!.rpc('verify_blockchain_chain');
+        } catch (_) {}
+      }
+
       if (res is List && res.isNotEmpty) {
         final row = res.first as Map<String, dynamic>;
         return {
           'isValid': row['is_valid'] ?? true,
           'totalBlocks': row['total_blocks'] ?? 0,
-          'brokenAtBlock': row['broken_at_block'],
+          'brokenAtBlock': row['broken_at_block'] ?? row['corrupted_at_block'],
           'message': row['message'] ?? 'Rantai Kriptografi 100% Valid & Terverifikasi',
         };
       }

@@ -2,6 +2,7 @@
 // Modular Corporate Navbar Orchestrator for Seuma.Koffie v4.0
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_theme.dart';
 import 'components/navbar_logo.dart';
 import 'components/navbar_nav_link.dart';
@@ -12,7 +13,7 @@ import 'components/navbar_order_button.dart';
 import 'mobile/navbar_mobile_drawer.dart';
 import 'mega_menu/mega_menu_container.dart';
 import '../../state/auth_state.dart';
-import '../admin/admin_dashboard_dialog.dart';
+import '../../app/routes/app_routes.dart';
 import '../customer/customer_order_history_dialog.dart';
 
 class CorporateNavbar extends StatefulWidget {
@@ -239,39 +240,57 @@ class _CorporateNavbarState extends State<CorporateNavbar>
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                GestureDetector(
-                  onTap: () => AdminDashboardDialog.show(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFD4AF37), Color(0xFFAA7C11)],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.admin),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFD4AF37), Color(0xFFAA7C11)],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              AuthManager.instance.isAdmin ? Icons.admin_panel_settings : Icons.access_time_filled,
+                              size: 15,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              AuthManager.instance.isAdmin ? 'Admin Portal' : 'Shift Board',
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
+                          ],
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          AuthManager.instance.isAdmin ? Icons.admin_panel_settings : Icons.access_time_filled,
-                          size: 15,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          AuthManager.instance.isAdmin ? 'Admin Portal' : 'Shift Board',
-                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
-                        ),
-                      ],
+                    const SizedBox(width: 4),
+                    Tooltip(
+                      message: 'Buka Admin di Tab Baru',
+                      child: IconButton(
+                        icon: const Icon(Icons.open_in_new_rounded, color: AppColors.gold, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () {
+                          final baseUrl = Uri.base.toString().split('#')[0];
+                          launchUrl(Uri.parse('$baseUrl#/admin'), mode: LaunchMode.externalApplication);
+                        },
+                      ),
                     ),
-                  ),
+                  ],
                 ),
                 const SizedBox(width: 10),
               ],

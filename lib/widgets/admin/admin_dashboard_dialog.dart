@@ -1,5 +1,7 @@
 // lib/widgets/admin/admin_dashboard_dialog.dart
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../app/routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import '../../models/user_model.dart';
 import '../../state/admin_state.dart';
@@ -208,6 +210,26 @@ class _AdminDashboardDialogState extends State<AdminDashboardDialog> with Single
                         ),
 
                         const SizedBox(width: 8),
+
+                        // Buka Halaman Penuh (/admin)
+                        IconButton(
+                          tooltip: 'Buka di Halaman Penuh',
+                          icon: const Icon(Icons.fullscreen_rounded, color: AppColors.espresso),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).pushNamed(AppRoutes.admin);
+                          },
+                        ),
+
+                        // Buka di Tab Baru Browser
+                        IconButton(
+                          tooltip: 'Buka di Tab Baru Browser',
+                          icon: const Icon(Icons.open_in_new_rounded, color: AppColors.espresso),
+                          onPressed: () {
+                            final baseUrl = Uri.base.toString().split('#')[0];
+                            launchUrl(Uri.parse('$baseUrl#/admin'), mode: LaunchMode.externalApplication);
+                          },
+                        ),
 
                         // Refresh Button
                         IconButton(

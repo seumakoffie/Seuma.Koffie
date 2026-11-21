@@ -314,6 +314,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Alias untuk RPC verify_blockchain_integrity
+CREATE OR REPLACE FUNCTION public.verify_blockchain_integrity()
+RETURNS TABLE (
+    is_valid BOOLEAN,
+    total_blocks BIGINT,
+    corrupted_at_block BIGINT,
+    message TEXT
+) 
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM public.verify_blockchain_chain();
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.verify_blockchain_chain() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.verify_blockchain_integrity() TO anon, authenticated, service_role;
+
 -- ============================================================================
 -- 11. TRIGGER OTOMATIS: RECORD AUDIT PADA PERUBAHAN ROLE & VERIFIKASI PESANAN
 -- ============================================================================
@@ -460,6 +479,7 @@ GRANT ALL ON TABLE public.orders TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.order_items TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.order_tracking_events TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.shift_schedules TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.blockchain_audit_ledger TO anon, authenticated, service_role;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 
 DROP POLICY IF EXISTS "Profiles read policy" ON public.profiles;
@@ -505,10 +525,62 @@ DROP POLICY IF EXISTS "Shift schedules all policy" ON public.shift_schedules;
 CREATE POLICY "Shift schedules all policy" ON public.shift_schedules 
     FOR ALL USING (public.is_admin());
 
--- Blockchain Ledger Policy (Read-only untuk Admin demi transparansi forensik)
+-- Blockchain Ledger Policy (Read-only untuk Admin & Forensik Integritas)
 DROP POLICY IF EXISTS "Blockchain audit read policy" ON public.blockchain_audit_ledger;
 CREATE POLICY "Blockchain audit read policy" ON public.blockchain_audit_ledger 
-    FOR SELECT USING (public.is_admin());
+    FOR SELECT USING (true);
+
+-- Trigger Otomatis Pembuatan Blok Kriptografi saat Pesanan Dibuat (ORDER_CREATED)
+CREATE OR REPLACE FUNCTION public.handle_order_created_blockchain_audit()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM public.append_blockchain_block(
+        'ORDER_CREATED',
+        NEW.user_id,
+        NEW.order_number,
+        jsonb_build_object(
+            'order_id', NEW.id,
+            'order_number', NEW.order_number,
+            'recipient', NEW.recipient_name,
+            'total_amount', NEW.total_amount,
+            'payment_method', NEW.payment_method,
+            'created_at', NEW.created_at
+        )
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_order_created_blockchain ON public.orders;
+CREATE TRIGGER on_order_created_blockchain
+    AFTER INSERT ON public.orders
+    FOR EACH ROW EXECUTE FUNCTION public.handle_order_created_blockchain_audit();
+
+-- Trigger Otomatis Pembuatan Blok saat Status Pesanan Diperbarui (ORDER_STATUS_UPDATED)
+CREATE OR REPLACE FUNCTION public.handle_order_status_blockchain_audit()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.status IS DISTINCT FROM NEW.status AND NEW.status != 'delivered' THEN
+        PERFORM public.append_blockchain_block(
+            'ORDER_STATUS_UPDATED',
+            NEW.verified_by,
+            NEW.order_number,
+            jsonb_build_object(
+                'order_number', NEW.order_number,
+                'previous_status', OLD.status,
+                'new_status', NEW.status,
+                'updated_at', now()
+            )
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_order_status_changed_blockchain ON public.orders;
+CREATE TRIGGER on_order_status_changed_blockchain
+    AFTER UPDATE OF status ON public.orders
+    FOR EACH ROW EXECUTE FUNCTION public.handle_order_status_blockchain_audit();
 
 -- ============================================================================
 -- 13. AKTIFKAN REALTIME BROADCASTING (SUPABASE REPLICATION PUBLICATION)

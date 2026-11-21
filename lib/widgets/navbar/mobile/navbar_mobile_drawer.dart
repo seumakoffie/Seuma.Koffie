@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../state/auth_state.dart';
+import '../../../app/routes/app_routes.dart';
 import '../components/navbar_logo.dart';
-import '../../admin/admin_dashboard_dialog.dart';
 import '../../customer/customer_order_history_dialog.dart';
 
 class NavbarMobileDrawer {
@@ -258,7 +258,7 @@ class NavbarMobileDrawer {
                                 badgeColor: const Color(0xFFD4AF37),
                                 onTap: () {
                                   Navigator.pop(context);
-                                  AdminDashboardDialog.show(context);
+                                  Navigator.pushNamed(context, AppRoutes.admin);
                                 },
                               ),
                             _buildDrawerTile(

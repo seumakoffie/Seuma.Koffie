@@ -3,6 +3,7 @@
 
 abstract class AppRoutes {
   static const home = '/';
+  static const admin = '/admin';
   static const menu = '/menu';
   static const about = '/about';
   static const promo = '/promo';

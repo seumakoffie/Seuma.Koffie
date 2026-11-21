@@ -143,8 +143,10 @@ class AdminOrdersManagementTab extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: order.status == OrderStatus.onDelivery ? const Color(0xFFFFA000) : Colors.grey.shade200,
-          width: order.status == OrderStatus.onDelivery ? 1.5 : 1,
+          color: order.status == OrderStatus.onDelivery
+              ? const Color(0xFFFFA000)
+              : (order.status == OrderStatus.delivered ? const Color(0xFFA5D6A7) : Colors.grey.shade200),
+          width: (order.status == OrderStatus.onDelivery || order.status == OrderStatus.delivered) ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -275,11 +277,14 @@ class AdminOrdersManagementTab extends StatelessWidget {
                       );
                     }).toList(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                       decoration: BoxDecoration(
                         color: _statusBgColor(order.status),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: _statusTextColor(order.status).withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _statusTextColor(order.status), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(color: _statusTextColor(order.status).withValues(alpha: 0.15), blurRadius: 4),
+                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -287,13 +292,13 @@ class AdminOrdersManagementTab extends StatelessWidget {
                           Text(
                             '${order.status.badgeEmoji} ${order.status.displayName}',
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w900,
                               color: _statusTextColor(order.status),
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(Icons.arrow_drop_down, size: 16, color: _statusTextColor(order.status)),
+                          Icon(Icons.arrow_drop_down_circle_outlined, size: 14, color: _statusTextColor(order.status)),
                         ],
                       ),
                     ),
@@ -407,6 +412,7 @@ class AdminOrdersManagementTab extends StatelessWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
+
                         OutlinedButton.icon(
                           onPressed: () {
                             final phone = order.recipientPhone.replaceAll(RegExp(r'[^0-9]'), '');
@@ -533,6 +539,11 @@ class AdminOrdersManagementTab extends StatelessWidget {
               ),
             ],
           ),
+
+          const SizedBox(height: 12),
+
+          // Interactive Status Stepper Pipeline (Semua Tahapan Bisa Diklik Langsung)
+          _buildStatusStepper(context, admin, order),
 
           const SizedBox(height: 14),
 
@@ -678,6 +689,7 @@ class AdminOrdersManagementTab extends StatelessWidget {
                   ),
                 ),
               ] else if (order.status == OrderStatus.delivered) ...[
+                // Info Bukti & Segel Blockchain
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -698,6 +710,50 @@ class AdminOrdersManagementTab extends StatelessWidget {
                       child: const Text('⛓️ Segel Blockchain Sah', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF1B5E20))),
                     ),
                   ],
+                ),
+                const SizedBox(width: 8),
+
+                // Tombol Aksi Fleksibel untuk Mengubah / Mengembalikan Status Selesai
+                OutlinedButton.icon(
+                  onPressed: () => _confirmCancelOrder(context, admin, order),
+                  icon: const Icon(Icons.cancel_outlined, size: 14, color: Color(0xFFC62828)),
+                  label: const Text('Batalkan', style: TextStyle(fontSize: 11.5, color: Color(0xFFC62828))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFEF9A9A)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.brewing),
+                  icon: const Icon(Icons.coffee, size: 14),
+                  label: const Text('☕ Balik ke Seduh', style: TextStyle(fontSize: 11.5)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => admin.updateOrderStatus(order.id, OrderStatus.onDelivery),
+                  icon: const Icon(Icons.delivery_dining, size: 15, color: Color(0xFF0277BD)),
+                  label: const Text('🔄 Kembalikan ke Pengantaran', style: TextStyle(fontSize: 11.5, color: Color(0xFF0277BD), fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE1F5FE),
+                    side: const BorderSide(color: Color(0xFF81D4FA)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => DeliveryVerificationModal.show(context, order),
+                  icon: const Icon(Icons.verified_user, size: 16),
+                  label: const Text('🛵 Lihat Verifikasi', style: TextStyle(fontSize: 11.5)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E7D32),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
               ] else if (order.status == OrderStatus.cancelled) ...[
                 Container(
@@ -721,6 +777,133 @@ class AdminOrdersManagementTab extends StatelessWidget {
                 ),
               ],
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Interactive Status Stepper Pipeline Widget
+  Widget _buildStatusStepper(BuildContext context, AdminManager admin, OrderModel order) {
+    final stages = [
+      OrderStatus.pending,
+      OrderStatus.brewing,
+      OrderStatus.readyForDelivery,
+      OrderStatus.onDelivery,
+      OrderStatus.delivered,
+    ];
+
+    final currentIndex = stages.indexOf(order.status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F7F5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Alur Status Pesanan (Klik tahapan untuk ubah cepat):',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+              ),
+              Text(
+                'Tahap ${currentIndex >= 0 ? currentIndex + 1 : '-'}/5',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.caramel),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: stages.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final st = entry.value;
+                final isCurrent = st == order.status;
+                final isPassed = currentIndex >= 0 && idx < currentIndex;
+
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTap: () async {
+                        if (st == order.status) return;
+                        if (st == OrderStatus.delivered) {
+                          DeliveryVerificationModal.show(context, order);
+                          return;
+                        }
+                        final ok = await admin.updateOrderStatus(order.id, st);
+                        if (ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Status pesanan diubah ke: ${st.badgeEmoji} ${st.displayName}'),
+                              backgroundColor: const Color(0xFF2E7D32),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isCurrent
+                              ? _statusBgColor(st)
+                              : (isPassed ? const Color(0xFFE8F5E9) : Colors.white),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isCurrent
+                                ? _statusTextColor(st)
+                                : (isPassed ? const Color(0xFFA5D6A7) : Colors.grey.shade300),
+                            width: isCurrent ? 1.6 : 1.0,
+                          ),
+                          boxShadow: isCurrent
+                              ? [BoxShadow(color: _statusTextColor(st).withValues(alpha: 0.2), blurRadius: 4)]
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(st.badgeEmoji, style: const TextStyle(fontSize: 12)),
+                            const SizedBox(width: 4),
+                            Text(
+                              st.displayName,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: isCurrent ? FontWeight.w900 : (isPassed ? FontWeight.w700 : FontWeight.w500),
+                                color: isCurrent
+                                    ? _statusTextColor(st)
+                                    : (isPassed ? const Color(0xFF1B5E20) : AppColors.textDark),
+                              ),
+                            ),
+                            if (isPassed) ...[
+                              const SizedBox(width: 3),
+                              const Icon(Icons.check, size: 11, color: Color(0xFF2E7D32)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (idx < stages.length - 1)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 10,
+                          color: isPassed ? const Color(0xFF81C784) : Colors.grey.shade400,
+                        ),
+                      ),
+                  ],
+                );
+              }).toList(),
+            ),
           ),
         ],
       ),
