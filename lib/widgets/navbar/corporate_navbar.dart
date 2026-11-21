@@ -10,6 +10,7 @@ import 'components/navbar_search_field.dart';
 import 'components/navbar_auth_button.dart';
 import 'components/navbar_cart_button.dart';
 import 'components/navbar_order_button.dart';
+import 'components/navbar_security_badge.dart';
 import 'mobile/navbar_mobile_drawer.dart';
 import 'mega_menu/mega_menu_container.dart';
 import '../../state/auth_state.dart';
@@ -202,7 +203,9 @@ class _CorporateNavbarState extends State<CorporateNavbar>
     return Row(
       children: [
         NavbarLogo(onScrollToTop: widget.onScrollToTop),
-        const SizedBox(width: 32),
+        const SizedBox(width: 14),
+        const NavbarSecurityBadge(),
+        const SizedBox(width: 18),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [

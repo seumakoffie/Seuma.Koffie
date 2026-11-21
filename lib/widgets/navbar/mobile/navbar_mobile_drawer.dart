@@ -6,6 +6,7 @@ import '../../../state/auth_state.dart';
 import '../../../app/routes/app_routes.dart';
 import '../components/navbar_logo.dart';
 import '../../customer/customer_order_history_dialog.dart';
+import '../../security/security_certificate_dialog.dart';
 
 class NavbarMobileDrawer {
   static void show(
@@ -242,12 +243,12 @@ class NavbarMobileDrawer {
                             ),
                             _buildDrawerTile(
                               icon: Icons.shield_rounded,
-                              label: 'Keamanan Data E2EE',
-                              badge: 'Blockchain',
-                              badgeColor: const Color(0xFF00BCD4),
+                              label: 'Keamanan Data E2EE & Sertifikat',
+                              badge: 'TLS 1.3 Valid',
+                              badgeColor: const Color(0xFF2E7D32),
                               onTap: () {
                                 Navigator.pop(context);
-                                onShowAuth();
+                                SecurityCertificateDialog.show(context);
                               },
                             ),
                             if (AuthManager.instance.hasStaffAccess)
