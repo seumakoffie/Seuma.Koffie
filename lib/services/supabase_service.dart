@@ -82,6 +82,42 @@ class SeumaSupabaseService {
     _ordersStreamController.add(List.unmodifiable(orders));
   }
 
+  RealtimeChannel? _adminRealtimeChannel;
+
+  void subscribeToRealtimeChanges({
+    required VoidCallback onOrdersUpdated,
+    required VoidCallback onBlockchainUpdated,
+  }) {
+    if (!_isInitialized || client == null) return;
+    try {
+      if (_adminRealtimeChannel != null) {
+        client!.removeChannel(_adminRealtimeChannel!);
+      }
+      _adminRealtimeChannel = client!.channel('public:admin_realtime_sync')
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'orders',
+          callback: (payload) {
+            debugPrint('⚡ Realtime event on orders: ${payload.eventType}');
+            onOrdersUpdated();
+          },
+        )
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'blockchain_audit_ledger',
+          callback: (payload) {
+            debugPrint('⚡ Realtime event on blockchain: ${payload.eventType}');
+            onBlockchainUpdated();
+          },
+        )
+        ..subscribe();
+    } catch (e) {
+      debugPrint('Realtime channel subscribe error: $e');
+    }
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
     try {

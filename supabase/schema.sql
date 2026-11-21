@@ -586,6 +586,9 @@ CREATE TRIGGER on_order_status_changed_blockchain
 -- 13. AKTIFKAN REALTIME BROADCASTING (SUPABASE REPLICATION PUBLICATION)
 -- ============================================================================
 -- Mengaktifkan broadcast WebSocket Realtime untuk tabel pesanan, item, dan blockchain
+ALTER TABLE public.orders REPLICA IDENTITY FULL;
+ALTER TABLE public.blockchain_audit_ledger REPLICA IDENTITY FULL;
+
 DO $$ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
 EXCEPTION WHEN others THEN null; END $$;

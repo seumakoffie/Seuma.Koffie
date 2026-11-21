@@ -8,13 +8,16 @@ class BlockchainAuditView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final admin = AdminManager.instance;
-    final blocks = admin.blockchainBlocks;
-    final status = admin.blockchainStatus;
-    final isValid = status['isValid'] == true;
+    return ListenableBuilder(
+      listenable: AdminManager.instance,
+      builder: (context, _) {
+        final admin = AdminManager.instance;
+        final blocks = admin.blockchainBlocks;
+        final status = admin.blockchainStatus;
+        final isValid = status['isValid'] == true;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Status Banner Integritas
         Container(
@@ -198,6 +201,8 @@ class BlockchainAuditView extends StatelessWidget {
                 ),
         ),
       ],
+        );
+      },
     );
   }
 

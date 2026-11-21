@@ -152,14 +152,17 @@ class _AdminShiftKeeperTabState extends State<AdminShiftKeeperTab> {
 
   @override
   Widget build(BuildContext context) {
-    final admin = AdminManager.instance;
-    final keepers = admin.shiftKeepers;
-    final schedules = admin.shiftSchedules;
+    return ListenableBuilder(
+      listenable: AdminManager.instance,
+      builder: (context, _) {
+        final admin = AdminManager.instance;
+        final keepers = admin.shiftKeepers;
+        final schedules = admin.shiftSchedules;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Action Bar & Overview
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Action Bar & Overview
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -406,5 +409,7 @@ class _AdminShiftKeeperTabState extends State<AdminShiftKeeperTab> {
         ),
       ],
     );
+  },
+);
   }
 }

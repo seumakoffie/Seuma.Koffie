@@ -109,6 +109,26 @@ class AdminManager extends ChangeNotifier {
 
       startRealtimeOrdersListener();
       startRealtimeConsumersListener();
+
+      // 3. Daftarkan Realtime Channel Multi-Device (Postgres Changes)
+      s.subscribeToRealtimeChanges(
+        onOrdersUpdated: () {
+          s.fetchOrders().then((live) {
+            _orders = live;
+            notifyListeners();
+          }).catchError((_) {});
+        },
+        onBlockchainUpdated: () {
+          s.fetchBlockchainBlocks().then((blocks) {
+            _blockchainBlocks = blocks;
+            notifyListeners();
+          }).catchError((_) {});
+          s.verifyBlockchainIntegrity().then((status) {
+            _blockchainStatus = status;
+            notifyListeners();
+          }).catchError((_) {});
+        },
+      );
     } catch (e) {
       debugPrint('Error loading admin data: $e');
       _isLoading = false;
@@ -117,13 +137,29 @@ class AdminManager extends ChangeNotifier {
   }
 
   Future<bool> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    final oldOrder = (index != -1) ? _orders[index] : null;
+
+    // 1. Optimistic Local Update (0 ms instant UI reaction tanpa refresh)
+    if (index != -1 && oldOrder != null) {
+      _orders[index] = oldOrder.copyWith(status: newStatus);
+      notifyListeners();
+    }
+
+    // 2. Kirim update ke database Supabase
     final success = await SeumaSupabaseService.instance.updateOrderStatus(orderId, newStatus);
     if (success) {
-      final index = _orders.indexWhere((o) => o.id == orderId);
-      if (index != -1) {
-        _orders[index] = _orders[index].copyWith(status: newStatus);
+      // Refresh blockchain blocks di background agar selalu sinkron
+      SeumaSupabaseService.instance.fetchBlockchainBlocks().then((blocks) {
+        _blockchainBlocks = blocks;
+        notifyListeners();
+      }).catchError((_) {});
+    } else {
+      // Rollback jika terjadi kegagalan jaringan
+      if (index != -1 && oldOrder != null) {
+        _orders[index] = oldOrder;
+        notifyListeners();
       }
-      notifyListeners();
     }
     return success;
   }

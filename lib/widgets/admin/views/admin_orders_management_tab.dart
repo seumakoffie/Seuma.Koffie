@@ -14,91 +14,96 @@ class AdminOrdersManagementTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final admin = AdminManager.instance;
-    final orders = admin.filteredOrders;
-    final currentFilter = admin.orderFilter;
+    return ListenableBuilder(
+      listenable: AdminManager.instance,
+      builder: (context, _) {
+        final admin = AdminManager.instance;
+        final orders = admin.filteredOrders;
+        final currentFilter = admin.orderFilter;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Status Filter Chips
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildFilterChip(
-                label: 'Semua Pesanan (${admin.orders.length})',
-                isSelected: currentFilter == null,
-                onTap: () => admin.setOrderFilter(null),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: '🟡 Menunggu (${admin.orders.where((o) => o.status == OrderStatus.pending).length})',
-                isSelected: currentFilter == OrderStatus.pending,
-                onTap: () => admin.setOrderFilter(OrderStatus.pending),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: '☕ Diseduh (${admin.orders.where((o) => o.status == OrderStatus.brewing).length})',
-                isSelected: currentFilter == OrderStatus.brewing,
-                onTap: () => admin.setOrderFilter(OrderStatus.brewing),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: '📦 Siap Diantar (${admin.orders.where((o) => o.status == OrderStatus.readyForDelivery).length})',
-                isSelected: currentFilter == OrderStatus.readyForDelivery,
-                onTap: () => admin.setOrderFilter(OrderStatus.readyForDelivery),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: '🛵 Pengantaran (${admin.orders.where((o) => o.status == OrderStatus.onDelivery).length})',
-                isSelected: currentFilter == OrderStatus.onDelivery,
-                onTap: () => admin.setOrderFilter(OrderStatus.onDelivery),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: '✅ Selesai (${admin.orders.where((o) => o.status == OrderStatus.delivered).length})',
-                isSelected: currentFilter == OrderStatus.delivered,
-                onTap: () => admin.setOrderFilter(OrderStatus.delivered),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                label: '❌ Dibatalkan (${admin.orders.where((o) => o.status == OrderStatus.cancelled).length})',
-                isSelected: currentFilter == OrderStatus.cancelled,
-                onTap: () => admin.setOrderFilter(OrderStatus.cancelled),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Order Cards List
-        Expanded(
-          child: orders.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Tidak ada pesanan pada filter ini.',
-                        style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
-                      ),
-                    ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Status Filter Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip(
+                    label: 'Semua Pesanan (${admin.orders.length})',
+                    isSelected: currentFilter == null,
+                    onTap: () => admin.setOrderFilter(null),
                   ),
-                )
-              : ListView.separated(
-                  itemCount: orders.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    final order = orders[index];
-                    return _buildOrderCard(context, order);
-                  },
-                ),
-        ),
-      ],
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: '🟡 Menunggu (${admin.orders.where((o) => o.status == OrderStatus.pending).length})',
+                    isSelected: currentFilter == OrderStatus.pending,
+                    onTap: () => admin.setOrderFilter(OrderStatus.pending),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: '☕ Diseduh (${admin.orders.where((o) => o.status == OrderStatus.brewing).length})',
+                    isSelected: currentFilter == OrderStatus.brewing,
+                    onTap: () => admin.setOrderFilter(OrderStatus.brewing),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: '📦 Siap Diantar (${admin.orders.where((o) => o.status == OrderStatus.readyForDelivery).length})',
+                    isSelected: currentFilter == OrderStatus.readyForDelivery,
+                    onTap: () => admin.setOrderFilter(OrderStatus.readyForDelivery),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: '🛵 Pengantaran (${admin.orders.where((o) => o.status == OrderStatus.onDelivery).length})',
+                    isSelected: currentFilter == OrderStatus.onDelivery,
+                    onTap: () => admin.setOrderFilter(OrderStatus.onDelivery),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: '✅ Selesai (${admin.orders.where((o) => o.status == OrderStatus.delivered).length})',
+                    isSelected: currentFilter == OrderStatus.delivered,
+                    onTap: () => admin.setOrderFilter(OrderStatus.delivered),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: '❌ Dibatalkan (${admin.orders.where((o) => o.status == OrderStatus.cancelled).length})',
+                    isSelected: currentFilter == OrderStatus.cancelled,
+                    onTap: () => admin.setOrderFilter(OrderStatus.cancelled),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Order Cards List
+            Expanded(
+              child: orders.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Tidak ada pesanan pada filter ini.',
+                            style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: orders.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        final order = orders[index];
+                        return _buildOrderCard(context, order);
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
     );
   }
 
