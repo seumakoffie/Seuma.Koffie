@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 import '../models/order_model.dart';
 import '../models/shift_schedule_model.dart';
 import '../models/blockchain_block_model.dart';
+import '../models/admin_analytics_model.dart';
 import '../services/supabase_service.dart';
 import '../services/sound_notification_service.dart';
 
@@ -247,6 +248,133 @@ class AdminManager extends ChangeNotifier {
     _blockchainStatus = await SeumaSupabaseService.instance.verifyBlockchainIntegrity();
     _blockchainBlocks = await SeumaSupabaseService.instance.fetchBlockchainBlocks();
     notifyListeners();
+  }
+
+  AdminAnalyticsSummary get analyticsSummary {
+    double paidSum = 0.0;
+    double pendingSum = 0.0;
+    int paidCount = 0;
+    int deliveredCount = 0;
+    int cancelledCount = 0;
+
+    final Map<String, int> menuQtyMap = {};
+    final Map<String, double> menuRevMap = {};
+    final Map<String, String> menuCatMap = {};
+
+    for (final o in _orders) {
+      final isPaid = o.paymentStatus.toLowerCase() == 'paid';
+      if (isPaid) {
+        paidSum += o.totalAmount;
+        paidCount++;
+      } else if (o.status != OrderStatus.cancelled) {
+        pendingSum += o.totalAmount;
+      }
+
+      if (o.status == OrderStatus.delivered) {
+        deliveredCount++;
+      } else if (o.status == OrderStatus.cancelled) {
+        cancelledCount++;
+      }
+
+      if (o.status != OrderStatus.cancelled) {
+        for (final item in o.items) {
+          final name = item.menuName;
+          menuQtyMap[name] = (menuQtyMap[name] ?? 0) + item.quantity;
+          menuRevMap[name] = (menuRevMap[name] ?? 0.0) + item.subtotal;
+          menuCatMap[name] = item.variant ?? 'Kopi Aceh';
+        }
+      }
+    }
+
+    final double aov = paidCount > 0 ? (paidSum / paidCount) : 0.0;
+
+    // Daily Registrations for Last 7 Days
+    final now = DateTime.now();
+    final List<DailyRegistrationStat> dailyRegs = [];
+    final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    int newLast7Days = 0;
+    for (int i = 6; i >= 0; i--) {
+      final targetDate = now.subtract(Duration(days: i));
+      final dateKey = '${targetDate.day} ${monthNames[targetDate.month - 1]}';
+      int count = 0;
+
+      for (final c in _consumers) {
+        final ca = c.createdAt;
+        if (ca != null &&
+            ca.year == targetDate.year &&
+            ca.month == targetDate.month &&
+            ca.day == targetDate.day) {
+          count++;
+        }
+      }
+      newLast7Days += count;
+      dailyRegs.add(DailyRegistrationStat(dateKey: dateKey, date: targetDate, count: count));
+    }
+
+    // Top Selling Items (Best Sellers)
+    final allPerf = <MenuItemPerformance>[];
+    int totalSoldAll = 0;
+    menuQtyMap.forEach((_, q) => totalSoldAll += q);
+
+    menuQtyMap.forEach((name, qty) {
+      final rev = menuRevMap[name] ?? 0.0;
+      final cat = menuCatMap[name] ?? 'Kopi Aceh';
+      final pct = totalSoldAll > 0 ? (qty / totalSoldAll) * 100 : 0.0;
+      allPerf.add(MenuItemPerformance(
+        name: name,
+        category: cat,
+        totalQuantity: qty,
+        totalRevenue: rev,
+        percentageOfSales: pct,
+      ));
+    });
+
+    allPerf.sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
+    final topSelling = allPerf.take(5).toList();
+
+    // Slow moving items (Items in menu that have low or zero sales)
+    final slowMoving = <MenuItemPerformance>[];
+    final defaultMenus = [
+      'Kopi Sanger Espresso',
+      'Peach Americano (Iced)',
+      'Sanger Arabica Dingin',
+      'Espresso Romano',
+      'Kopi Tubruk Gayo',
+      'V60 Specialty Gayo',
+      'Matcha Latte Sanger',
+      'Cold Brew Sanger',
+      'Caramel Macchiato Gayo'
+    ];
+    for (final dm in defaultMenus) {
+      if (!menuQtyMap.containsKey(dm)) {
+        slowMoving.add(MenuItemPerformance(
+          name: dm,
+          category: 'Kopi Aceh',
+          totalQuantity: 0,
+          totalRevenue: 0,
+          percentageOfSales: 0.0,
+        ));
+      }
+    }
+    if (allPerf.length > 5) {
+      slowMoving.addAll(allPerf.reversed.take(3));
+    }
+
+    return AdminAnalyticsSummary(
+      totalRevenuePaid: paidSum,
+      totalRevenuePending: pendingSum,
+      totalOrdersCount: _orders.length,
+      totalPaidOrdersCount: paidCount,
+      totalDeliveredOrdersCount: deliveredCount,
+      totalCancelledOrdersCount: cancelledCount,
+      averageOrderValue: aov,
+      totalConsumersCount: _consumers.length,
+      newConsumersLast7Days: newLast7Days,
+      dailyRegistrations: dailyRegs,
+      topSellingItems: topSelling,
+      slowMovingItems: slowMoving,
+    );
   }
 
   @override

@@ -12,6 +12,7 @@ import '../../widgets/admin/views/admin_shift_keeper_tab.dart';
 import '../../widgets/admin/views/admin_orders_management_tab.dart';
 import '../../widgets/admin/views/admin_menu_management_tab.dart';
 import '../../widgets/admin/views/blockchain_audit_view.dart';
+import '../../widgets/admin/views/admin_analytics_tab.dart';
 import '../../services/sound_notification_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
@@ -28,7 +29,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         AdminManager.instance.setSelectedTab(_tabController.index);
@@ -386,6 +387,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                           ],
                         ),
                       ),
+                      const Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.insights_rounded, size: 18),
+                            SizedBox(width: 6),
+                            Text('Analitik & Finansial'),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -406,6 +417,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                             AdminOrdersManagementTab(),
                             AdminMenuManagementTab(),
                             BlockchainAuditView(),
+                            AdminAnalyticsTab(),
                           ],
                         ),
                 ),
